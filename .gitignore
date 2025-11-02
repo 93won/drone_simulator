@@ -1,5 +1,7 @@
-# PX4-Autopilot (External source code)
+# External source code
 PX4-Autopilot/
+Micro-XRCE-DDS-Agent/
+agent_install/
 
 # Build artifacts
 build/

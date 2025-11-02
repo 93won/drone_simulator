@@ -1,0 +1,1740 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+% Remove paragraph indentation
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+}
+
+% Title information
+\title{Learning Autonomous Drone Navigation: A Beginner's Journey with PX4, Gazebo, and ROS2}
+\author{Seungwon Choi \\ Seoul National University \\ \texttt{csw3575@snu.ac.kr}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This tutorial documents my learning journey in autonomous drone development using open-source tools. As someone new to this field, I created this guide to systematically organize the knowledge I'm acquiring while exploring PX4, ROS2, and Gazebo. The content progresses from basic installation and manual flight control to ROS2 integration, Offboard control, SLAM integration, and navigation in both static and dynamic environments. This is not written by an expert, but rather by a fellow learner who hopes that organizing these concepts step-by-step might help others starting the same journey. All examples and explanations are based on my hands-on experience and understanding at this stage of learning.
+\end{abstract}
+
+\textbf{Keywords:} Autonomous Drones, PX4, ROS2, Gazebo, Offboard Control, SLAM, Path Planning, Static Environment, Dynamic Environment, Obstacle Avoidance
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+Autonomous drones are revolutionizing industries ranging from agriculture and surveillance to search and rescue operations. The ability to navigate complex environments without human intervention has made drones an essential tool for modern applications. As a student interested in robotics and autonomous systems, I wanted to understand how these technologies work from the ground up.
+
+However, diving into autonomous drone development can be overwhelming. There are multiple interconnected technologies—flight control, sensor fusion, mapping, path planning—each with its own learning curve. Moreover, working with real drones is expensive and risky during the learning phase.
+
+This tutorial is my attempt to document and organize what I'm learning as I explore this fascinating field. I'm using simulation environments (Gazebo), industry-standard autopilot software (PX4), and modern robotics frameworks (ROS2). These are the same tools used by professionals, which means the skills being developed here should be transferable to real-world applications.
+
+I'm writing this not as an expert, but as someone who is currently learning. My goal is to create a structured learning path that my future self (and hopefully others) can follow. The explanations reflect my current understanding, and I'm sure there's still much more to learn.
+
+\subsection{Tutorial Objectives}
+
+Through this learning journey, I'm working toward being able to:
+
+\begin{itemize}
+    \item Set up a complete drone simulation environment using Gazebo and PX4
+    \item Understand the basic architecture of modern autopilot systems
+    \item Control drones manually through command-line interfaces
+    \item Integrate ROS2 with PX4 for programmatic control
+    \item Implement Offboard mode for autonomous waypoint navigation
+    \item Understand and work with various sensor data streams
+    \item Integrate SLAM for mapping and localization
+    \item Implement path planning in static environments
+    \item Develop obstacle avoidance for dynamic environments
+    \item Document solutions to common issues I encounter
+\end{itemize}
+
+This tutorial follows my learning progression: starting with basic installation and manual control, then advancing to ROS2 integration and Offboard control, followed by SLAM integration, and finally exploring navigation strategies in both static and dynamic environments. Each chapter represents a stage in my learning process.
+
+\subsection{System Requirements}
+
+\begin{itemize}
+    \item Ubuntu 20.04 LTS
+    \item At least 8GB RAM (16GB recommended)
+    \item 20GB free disk space
+    \item Intel Core i5 or better
+    \item Graphics card supporting OpenGL 3.3 or higher
+    \item CMake 3.20 or higher (required for Micro XRCE-DDS Agent)
+\end{itemize}
+
+\textbf{Note:} If your system has CMake 3.16 (Ubuntu 20.04 default), you'll need to upgrade it. Installation instructions are provided in Chapter 2.
+
+\section{System Overview}
+
+\subsection{Hardware and Software Stack}
+
+As I learned about drone development, I discovered that the environment consists of several integrated components. Here's how I understand the system architecture so far:
+
+\textbf{Simulation Layer:}
+\begin{itemize}
+    \item \textbf{Gazebo Classic 11}: A 3D physics simulator that provides realistic environmental modeling, sensor simulation, and visualization. From what I've learned, Gazebo renders the virtual world and simulates physics including aerodynamics, gravity, and collisions. It's quite impressive to see how realistic the simulation can be! \\
+    \textit{Reference:} \url{https://classic.gazebosim.org/}
+\end{itemize}
+
+\textbf{Autopilot Layer:}
+\begin{itemize}
+    \item \textbf{PX4 Autopilot}: An open-source flight control software. I'm running it in Software-In-The-Loop (SITL) mode, which means it simulates the drone's firmware without needing physical hardware. This was a relief because I could start learning without buying expensive equipment. PX4 handles flight control algorithms, sensor fusion, and state estimation—concepts I'm still wrapping my head around. \\
+    \textit{Reference:} \url{https://docs.px4.io/}
+\end{itemize}
+
+\textbf{Communication Layer:}
+\begin{itemize}
+    \item \textbf{MAVLink Protocol}: A lightweight messaging protocol for drones. I learned this is an industry standard. \\
+    \textit{Reference:} \url{https://mavlink.io/}
+    
+    \item \textbf{Micro XRCE-DDS}: This was confusing at first! It's a middleware that bridges PX4 and ROS2, translating between the lightweight XRCE protocol (used by resource-constrained systems like PX4) and the DDS protocol (used by ROS2). Understanding this bridge was key to getting everything working. \\
+    \textit{Reference:} \url{https://micro-xrce-dds.docs.eprosima.com/}
+\end{itemize}
+
+\textbf{Application Layer:}
+\begin{itemize}
+    \item \textbf{ROS2 Galactic}: A framework for robot software development. This is what I use to write control programs. ROS2 provides tools for creating modular control nodes and managing communication between different parts of the system. \\
+    \textit{Reference:} \url{https://docs.ros.org/en/galactic/}
+    
+    \item \textbf{Custom Control Nodes}: These are the Python or C++ programs I'm learning to write to implement autonomous behaviors.
+\end{itemize}
+
+\subsection{Communication Architecture}
+
+Here's how I understand the data flow between components (though I'm still learning the details):
+
+\begin{enumerate}
+    \item \textbf{Gazebo $\leftrightarrow$ PX4}: Gazebo simulates sensors (IMU, GPS, camera) and sends this data to PX4. PX4 computes motor commands and sends them back to Gazebo. This happens through Gazebo's plugin system.
+    
+    \item \textbf{PX4 $\leftrightarrow$ Micro XRCE-DDS Agent}: PX4's XRCE-DDS client connects to the Agent via UDP on port 8888 (default). The Agent runs on my computer and acts as a translator between PX4 and ROS2.
+    
+    \item \textbf{Micro XRCE-DDS Agent $\leftrightarrow$ ROS2}: The Agent publishes PX4's data as ROS2 topics using DDS. This makes PX4 data available to any ROS2 program I write.
+    
+    \item \textbf{ROS2 Nodes}: My programs can subscribe to PX4 topics (like \texttt{/fmu/out/vehicle\_status}) to read drone data, and publish to other topics (like \texttt{/fmu/in/vehicle\_command}) to send commands.
+\end{enumerate}
+
+From what I've learned, this architecture has several advantages:
+\begin{itemize}
+    \item \textbf{Modularity}: I can develop and test each component separately, which makes learning easier
+    \item \textbf{Flexibility}: Multiple programs can interact with the same simulated drone
+    \item \textbf{Scalability}: It should be easy to add new sensors or control algorithms as I learn more
+    \item \textbf{Realistic Testing}: SITL simulation apparently mimics real hardware behavior quite closely
+\end{itemize}
+
+\textit{Note: My understanding of these communication patterns is still developing. There may be nuances I haven't fully grasped yet.}
+
+\section{Chapter 0: Installation and Setup}
+
+This chapter documents the installation process I followed. I've created an automated script to make this easier, but I'll also explain each step so you understand what's being installed and why.
+
+\subsection{System Requirements}
+
+Before starting, I checked my system to make sure it met the requirements:
+
+\begin{lstlisting}[language=bash]
+# Check Ubuntu version
+lsb_release -a
+# I'm using Ubuntu 20.04
+
+# Check available disk space
+df -h
+# Make sure you have at least 20GB free
+
+# Check RAM
+free -h
+# I have 16GB, but 8GB should work
+\end{lstlisting}
+
+\subsection{Installing Gazebo Simulator}
+
+I learned that Gazebo Classic 11 is the recommended version for PX4 compatibility. Here's how I installed it:
+
+\begin{lstlisting}[language=bash]
+# Add Gazebo repository
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable \
+`lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+
+# Add repository key
+wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+
+# Install Gazebo 11
+sudo apt update
+sudo apt install -y gazebo11 libgazebo11-dev
+\end{lstlisting}
+
+Verify installation:
+\begin{lstlisting}[language=bash]
+gazebo --version
+# Should output: Gazebo multi-robot simulator, version 11.x.x
+\end{lstlisting}
+
+\subsection{Installing PX4 Autopilot}
+
+PX4 requires several build tools and dependencies:
+
+\textbf{Step 1: Install Build Dependencies}
+\begin{lstlisting}[language=bash]
+# Essential build tools
+sudo apt install -y \
+    git \
+    cmake \
+    ninja-build \
+    ccache \
+    python3-pip \
+    python3-dev
+
+# Python packages for PX4
+pip3 install --user \
+    pymavlink \
+    pyserial \
+    empy \
+    toml \
+    numpy \
+    packaging \
+    jinja2 \
+    pyyaml
+\end{lstlisting}
+
+\textbf{Step 2: Install MAVLink and Additional Tools}
+\begin{lstlisting}[language=bash]
+# MAVLink tools
+pip3 install --user mavproxy
+
+# Install additional dependencies
+sudo apt install -y \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav
+\end{lstlisting}
+
+\textbf{Step 3: Clone and Build PX4}
+\begin{lstlisting}[language=bash]
+# Clone PX4 repository
+git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+cd PX4-Autopilot
+
+# Checkout stable version
+git checkout v1.14.0
+
+# Build for SITL with Gazebo
+make px4_sitl gazebo-classic
+\end{lstlisting}
+
+The first build took me about 15-20 minutes. Don't worry if it seems slow—subsequent builds are much faster thanks to ccache (a compilation cache tool).
+
+\subsection{Setting up ROS2}
+
+If you don't have ROS2 installed yet (I didn't when I started), here's what I did:
+
+\textbf{Step 1: Install ROS2 Galactic}
+\begin{lstlisting}[language=bash]
+# Set locale
+sudo apt update && sudo apt install -y locales
+sudo locale-gen en_US en_US.UTF-8
+sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
+
+# Add ROS2 repository
+sudo apt install -y software-properties-common
+sudo add-apt-repository universe
+sudo apt update && sudo apt install -y curl
+
+# Add ROS2 GPG key
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+    -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+# Add repository to sources list
+echo "deb [arch=$(dpkg --print-architecture) \
+signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
+| sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Install ROS2 Galactic
+sudo apt update
+sudo apt install -y ros-galactic-desktop
+\end{lstlisting}
+
+\textbf{Step 2: Configure Environment}
+\begin{lstlisting}[language=bash]
+# Source ROS2 setup
+echo "source /opt/ros/galactic/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+
+# Install additional ROS2 tools
+sudo apt install -y \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-argcomplete
+\end{lstlisting}
+
+\textbf{Verification:}
+\begin{lstlisting}[language=bash]
+# Check ROS2 installation
+ros2 --version
+# Should output: ros2 cli version galactic
+
+# Test ROS2 (this was exciting when it worked!)
+ros2 run demo_nodes_cpp talker
+# You should see messages being published
+\end{lstlisting}
+
+\subsection{Automated Installation Script}
+
+To make things easier (and to avoid repeating all these steps if I need to reinstall), I created an automated script:
+
+\begin{lstlisting}[language=bash]
+# Navigate to project directory
+cd drone_simulator/chapter0
+
+# Make script executable
+chmod +x install_drone_sim.sh
+
+# Run installation
+./install_drone_sim.sh
+\end{lstlisting}
+
+The script does everything automatically and shows colored output for each stage. It took about 30-45 minutes on my machine, depending on internet speed. I recommend using this script—it handles all the dependencies and configuration automatically.
+
+\textit{Note: If you encounter any issues during installation, check the troubleshooting section in the appendix. I documented the problems I ran into and how I solved them.}
+
+\section{Chapter 1: Basic Flight Operations}
+
+This chapter covers my first experience with manual drone control. It was pretty exciting to see the drone actually fly (even if just in simulation)!
+
+\subsection{Launching the Simulation}
+
+Here's how I start the simulation environment:
+
+\begin{lstlisting}[language=bash]
+# Navigate to PX4 directory
+cd PX4-Autopilot
+
+# Launch Gazebo simulation with default quadcopter
+make px4_sitl gazebo-classic
+\end{lstlisting}
+
+When I first ran this command, I was amazed by everything it does:
+\begin{itemize}
+    \item Builds PX4 firmware (if not already built)
+    \item Starts Gazebo Classic simulator
+    \item Spawns an Iris quadcopter model
+    \item Initializes PX4 autopilot in SITL mode
+    \item Opens the PX4 console (pxh>)
+\end{itemize}
+
+\textbf{What You Should See:}
+\begin{enumerate}
+    \item A Gazebo window opens with a 3D environment and a quadcopter
+    \item The PX4 console appears in your terminal with the prompt \texttt{pxh>}
+    \item Lots of initialization messages (don't worry, this is normal!)
+    \item Messages like "EKF2 IMU aligned" and "home position set"—these mean it's ready
+\end{enumerate}
+
+\textbf{Alternative Models (fun to try):}
+\begin{lstlisting}[language=bash]
+# I tried these different models
+make px4_sitl gazebo-classic_typhoon_h480  # Hexacopter
+make px4_sitl gazebo-classic_plane         # Fixed-wing
+make px4_sitl gazebo-classic_rover         # Ground vehicle
+\end{lstlisting}
+
+\subsection{Understanding the PX4 Console}
+
+The PX4 console (\texttt{pxh>}) was intimidating at first, but it's actually quite straightforward. Think of it as a command-line interface for the drone's brain.
+
+\textbf{Basic Commands I Use Frequently:}
+
+\begin{lstlisting}[language=bash]
+# List all available commands (very helpful when starting)
+help
+
+# Check system status (I use this a lot)
+commander status
+
+# See what's running
+top
+
+# View parameters
+param show
+
+# Monitor sensor data in real-time (this is cool to watch!)
+listener sensor_combined
+listener vehicle_status
+listener vehicle_local_position
+\end{lstlisting}
+
+\textbf{Understanding Status Output:}
+
+When you run \texttt{commander status}, you'll see something like:
+\begin{verbatim}
+INFO  [commander] arming state: STANDBY
+INFO  [commander] nav state: MANUAL
+INFO  [commander] nav mode: POSCTL
+INFO  [commander] armed: NO
+\end{verbatim}
+
+Here's what I learned these mean:
+\begin{itemize}
+    \item \textbf{arming state}: Whether the motors can spin (STANDBY means ready but not spinning)
+    \item \textbf{nav state}: Current navigation state
+    \item \textbf{nav mode}: Flight mode—POSCTL means position control (GPS-based hovering)
+    \item \textbf{armed}: Whether motors are enabled
+\end{itemize}
+
+\subsection{Basic Flight Commands}
+
+\textbf{Pre-flight Checks:}
+
+Before my first flight, I learned to check if the drone is ready:
+\begin{lstlisting}[language=bash]
+# Check if everything is OK
+commander check
+\end{lstlisting}
+
+Wait for messages confirming:
+\begin{itemize}
+    \item Position estimate valid
+    \item Sensors healthy
+    \item Home position set
+    \item Flight mode valid
+\end{itemize}
+
+\textbf{My First Flight Sequence:}
+
+\textbf{1. Arming the Motors:}
+\begin{lstlisting}[language=bash]
+# Enable motor control
+commander arm
+\end{lstlisting}
+
+You should see: \texttt{INFO [commander] Armed by command}
+
+The propellers start spinning slowly. This was a bit nerve-wracking the first time, even though it's just a simulation!
+
+\textbf{2. Takeoff:}
+\begin{lstlisting}[language=bash]
+# Takeoff to default altitude (2.5m)
+commander takeoff
+\end{lstlisting}
+
+The drone will:
+\begin{itemize}
+    \item Gradually increase throttle
+    \item Lift off vertically
+    \item Stabilize at target altitude
+    \item Hold position using GPS and IMU
+\end{itemize}
+
+I recommend watching this happen in Gazebo—it's pretty cool!
+
+Monitor position during flight:
+\begin{lstlisting}[language=bash]
+# Open a new terminal for this
+listener vehicle_local_position
+\end{lstlisting}
+
+You'll see real-time X, Y, Z coordinates and velocities updating.
+
+\textbf{3. In-flight Observations:}
+
+While hovering, I noticed:
+\begin{itemize}
+    \item Small oscillations as the controller maintains position (this is normal)
+    \item Altitude stays around 2.5m
+    \item GPS coordinates stabilize
+    \item Battery status (in simulation, it never runs out—nice!)
+\end{itemize}
+
+\textbf{4. Landing:}
+\begin{lstlisting}[language=bash]
+# Bring it back down
+commander land
+\end{lstlisting}
+
+The landing is smooth and controlled:
+\begin{itemize}
+    \item Descends at about 1 m/s
+    \item Slows down near the ground
+    \item Touches down gently
+    \item Motors automatically turn off
+\end{itemize}
+
+\textbf{5. Manual Disarm (if needed):}
+\begin{lstlisting}[language=bash]
+# Stop motors manually
+commander disarm
+\end{lstlisting}
+
+\textbf{Emergency Stop:}
+
+I learned about these but haven't needed them yet:
+\begin{lstlisting}[language=bash]
+# Force immediate disarm
+commander disarm -f
+
+# Emergency kill switch (cuts all motors instantly)
+commander kill
+\end{lstlisting}
+
+\textbf{My Typical Flight Session:}
+
+Here's what I do now that I'm more comfortable:
+\begin{lstlisting}[language=bash]
+# 1. Launch simulation
+make px4_sitl gazebo-classic
+
+# 2. Wait for "EKF2 IMU aligned" message (important!)
+
+# 3. Verify system ready
+pxh> commander check
+
+# 4. Arm motors
+pxh> commander arm
+
+# 5. Takeoff
+pxh> commander takeoff
+
+# 6. Let it hover for a bit (watch in Gazebo)
+
+# 7. Land
+pxh> commander land
+
+# 8. Motors disarm automatically
+\end{lstlisting}
+
+\textbf{Practice Exercise:}
+
+I recommend trying this to get comfortable:
+\begin{enumerate}
+    \item Launch simulation
+    \item Arm and takeoff
+    \item Open a second terminal and run \texttt{listener vehicle\_local\_position}
+    \item Watch the Z coordinate (altitude) stabilize around -2.5m
+    \item Note: The negative value is because PX4 uses NED (North-East-Down) coordinates, which I found confusing at first!
+    \item Land and observe the smooth descent
+\end{enumerate}
+
+After completing this chapter, I felt much more confident with basic drone control. The next challenge is automating these operations using ROS2, which is what Chapter 2 covers.
+
+\textit{Note: These are the basics I've learned so far. I'm sure there are more advanced flight modes and commands to explore as I continue learning!}
+
+\section{Chapter 2: ROS2 Integration and Offboard Control}
+
+This chapter documents my journey into integrating ROS2 with PX4 and implementing autonomous flight using Offboard mode. This was probably the most challenging part so far, but also the most rewarding. Once I got it working, I could control the drone programmatically and execute autonomous missions, which opened up so many possibilities!
+
+\subsection{Understanding uXRCE-DDS Bridge}
+
+Before diving into installation, I needed to understand what the Micro XRCE-DDS bridge actually does. This took me a while to grasp, so let me explain it as I understand it now.
+
+\textbf{The Problem:}
+
+PX4 runs on resource-constrained systems (like flight controllers) and uses a lightweight communication protocol. ROS2, on the other hand, runs on regular computers and uses DDS (Data Distribution Service), which is more feature-rich but also heavier. These two can't talk to each other directly.
+
+\textbf{The Solution:}
+
+The Micro XRCE-DDS Agent acts as a translator. Think of it as an interpreter between two people speaking different languages:
+
+\begin{itemize}
+    \item \textbf{PX4 side}: Uses XRCE-DDS Client (lightweight, built into PX4)
+    \item \textbf{Bridge}: Micro XRCE-DDS Agent (runs on your computer)
+    \item \textbf{ROS2 side}: Uses standard DDS (what ROS2 nodes use)
+\end{itemize}
+
+When PX4 wants to send sensor data, it goes like this:
+\begin{enumerate}
+    \item PX4 sends data using XRCE protocol to the Agent (via UDP port 8888)
+    \item Agent receives it and translates it to DDS
+    \item Agent publishes it as a ROS2 topic (e.g., \texttt{/fmu/out/vehicle\_status})
+    \item Any ROS2 node can now subscribe to this topic
+\end{enumerate}
+
+The reverse works too: when you want to send commands to PX4 from ROS2, the Agent translates your ROS2 messages into XRCE format that PX4 understands.
+
+\textit{This was confusing at first, but running the Agent and seeing the topics appear in ROS2 made it click for me!}
+
+\subsection{Prerequisites: CMake 3.20 or Higher}
+
+Before installing the Micro XRCE-DDS Agent, you need to ensure CMake 3.20 or higher is installed. Ubuntu 20.04 comes with CMake 3.16 by default, which is not sufficient.
+
+\textbf{Check your CMake version:}
+\begin{lstlisting}[language=bash]
+cmake --version
+# If version is less than 3.20, follow the upgrade steps below
+\end{lstlisting}
+
+\textbf{Upgrade CMake to 3.20.6:}
+
+\begin{lstlisting}[language=bash]
+# Download CMake 3.20.6 binary
+cd /tmp
+wget https://github.com/Kitware/CMake/releases/download/v3.20.6/\
+cmake-3.20.6-linux-x86_64.sh
+
+# Install to ~/.local
+chmod +x cmake-3.20.6-linux-x86_64.sh
+./cmake-3.20.6-linux-x86_64.sh --prefix=$HOME/.local --skip-license
+
+# Add to PATH (add this to your ~/.bashrc for permanent effect)
+export PATH="$HOME/.local/bin:$PATH"
+
+# Verify installation
+cmake --version
+# Should output: cmake version 3.20.6
+\end{lstlisting}
+
+\textbf{Make PATH change permanent:}
+\begin{lstlisting}[language=bash]
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+\end{lstlisting}
+
+Once CMake is upgraded, you can proceed with the Agent installation.
+
+\subsection{Installing Micro XRCE-DDS Agent}
+
+The Micro XRCE-DDS Agent will be installed locally within the project directory. This approach keeps all project dependencies contained and avoids the need for system-wide installations.
+
+\textbf{Automated Installation:}
+
+An installation script is provided to automate the entire process:
+
+\begin{lstlisting}[language=bash]
+cd chapter2
+chmod +x install_chapter2.sh
+./install_chapter2.sh
+\end{lstlisting}
+
+The script installs the Micro XRCE-DDS Agent in \texttt{chapter2/agent\_install/}, sets up the ROS2 workspace with PX4 message definitions, and creates helper scripts for convenient usage.
+
+\textbf{Verification:}
+
+Verify the installation:
+\begin{lstlisting}[language=bash]
+cd chapter2
+./run_agent.sh --help
+# Should display MicroXRCEAgent help message
+\end{lstlisting}
+
+\subsection{Building PX4 Message Interfaces}
+
+The next step is to build the PX4 message definitions for ROS2. These message definitions describe the data structures used for communication between PX4 and ROS2.
+
+\textbf{Step 1: Create ROS2 Workspace}
+
+\begin{lstlisting}[language=bash]
+# Create workspace directories
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+
+# Clone PX4 message definitions
+git clone https://github.com/PX4/px4_msgs.git
+
+# Navigate back to workspace root
+cd ~/ros2_ws
+\end{lstlisting}
+
+\textbf{Step 2: Build the Messages}
+
+\begin{lstlisting}[language=bash]
+# Build using colcon
+colcon build
+
+# Source the workspace
+source install/setup.bash
+\end{lstlisting}
+
+The build process generates over 100 PX4 message types and typically takes 2-3 minutes to complete.
+
+\textbf{Step 3: Configure Environment}
+
+To avoid manually sourcing the workspace in each new terminal session, add it to the bash configuration:
+
+\begin{lstlisting}[language=bash]
+echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+\end{lstlisting}
+
+\textbf{Verification:}
+
+Verify that the PX4 messages are available:
+\begin{lstlisting}[language=bash]
+# List PX4 message types
+ros2 interface list | grep px4_msgs
+
+# Expected output includes messages such as:
+# px4_msgs/msg/VehicleStatus
+# px4_msgs/msg/VehicleLocalPosition
+# px4_msgs/msg/VehicleCommand
+# ... and many more
+\end{lstlisting}
+
+\subsection{Testing the Connection}
+
+With all components installed, the connection between PX4 and ROS2 can now be tested.
+
+\textbf{Terminal 1: Launch PX4 Simulation}
+
+\begin{lstlisting}[language=bash]
+cd ~/PX4-Autopilot
+make px4_sitl gazebo-classic
+\end{lstlisting}
+
+Wait for the simulation to fully initialize. The message "EKF2 IMU aligned" indicates the system is ready.
+
+\textbf{Terminal 2: Start the Agent}
+
+\begin{lstlisting}[language=bash]
+# Navigate to chapter2 folder
+cd chapter2
+
+# Start Agent using the helper script
+./run_agent.sh udp4 -p 8888
+\end{lstlisting}
+
+Expected output:
+\begin{verbatim}
+[INFO] Starting Micro XRCE-DDS Agent...
+[INFO] UDP Transport listening on port 8888
+\end{verbatim}
+
+After a few seconds, connection messages will appear:
+\begin{verbatim}
+[INFO] New session created with client 0x01
+[INFO] session established
+\end{verbatim}
+
+These messages confirm that PX4 has successfully connected to the Agent.
+
+\textbf{Terminal 3: Check ROS2 Topics}
+
+\begin{lstlisting}[language=bash]
+# List all topics
+ros2 topic list
+\end{lstlisting}
+
+The output should include numerous \texttt{/fmu/} topics:
+\begin{verbatim}
+/fmu/in/vehicle_command
+/fmu/out/battery_status
+/fmu/out/sensor_combined
+/fmu/out/vehicle_attitude
+/fmu/out/vehicle_local_position
+/fmu/out/vehicle_status
+... and many more
+\end{verbatim}
+
+If these topics are visible, the PX4-ROS2 connection has been successfully established.
+
+\subsection{Monitoring Drone Data}
+
+ROS2 provides tools to monitor drone data in real-time.
+
+\textbf{View Vehicle Status:}
+\begin{lstlisting}[language=bash]
+ros2 topic echo /fmu/out/vehicle_status
+\end{lstlisting}
+
+This command displays the arming state, flight mode, and system health information with real-time updates.
+
+\textbf{View Position:}
+\begin{lstlisting}[language=bash]
+ros2 topic echo /fmu/out/vehicle_local_position
+\end{lstlisting}
+
+This shows the drone's X, Y, Z coordinates and velocities. The values update dynamically when the drone is armed and in flight.
+
+\textbf{View Sensor Data:}
+\begin{lstlisting}[language=bash]
+ros2 topic echo /fmu/out/sensor_combined
+\end{lstlisting}
+
+This displays raw IMU data including accelerometer, gyroscope, and magnetometer readings, all streaming in real-time.
+
+\subsection{Creating ROS2 Control Nodes}
+
+Now for the really fun part—writing code to control the drone!
+
+\textbf{Step 1: Create a ROS2 Package}
+
+\begin{lstlisting}[language=bash]
+cd ~/ros2_ws/src
+
+# Create Python package
+ros2 pkg create --build-type ament_python drone_controller \
+    --dependencies rclpy px4_msgs
+\end{lstlisting}
+
+This creates a package structure with all the necessary files.
+
+\textbf{Step 2: Write a Position Monitor Node}
+
+Create file: \texttt{~/ros2\_ws/src/drone\_controller/drone\_controller/position\_monitor.py}
+
+\begin{lstlisting}[language=Python]
+#!/usr/bin/env python3
+
+import rclpy
+from rclpy.node import Node
+from px4_msgs.msg import VehicleLocalPosition
+
+class PositionMonitor(Node):
+    def __init__(self):
+        super().__init__('position_monitor')
+        
+        # Subscribe to vehicle position
+        self.subscription = self.create_subscription(
+            VehicleLocalPosition,
+            '/fmu/out/vehicle_local_position',
+            self.position_callback,
+            10
+        )
+        
+        self.get_logger().info('Position Monitor Node Started!')
+    
+    def position_callback(self, msg):
+        # Print position (NED coordinates)
+        self.get_logger().info(
+            f'Position - X: {msg.x:.2f}m, Y: {msg.y:.2f}m, ' +
+            f'Z: {msg.z:.2f}m (NED frame)'
+        )
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = PositionMonitor()
+    
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+\end{lstlisting}
+
+\textbf{Step 3: Update setup.py}
+
+Edit \texttt{~/ros2\_ws/src/drone\_controller/setup.py} to add the entry point:
+
+\begin{lstlisting}[language=Python]
+from setuptools import setup
+
+package_name = 'drone_controller'
+
+setup(
+    name=package_name,
+    version='0.0.1',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='your_name',
+    maintainer_email='your_email@example.com',
+    description='Drone control package for learning',
+    license='Apache License 2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'position_monitor = drone_controller.position_monitor:main',
+        ],
+    },
+)
+\end{lstlisting}
+
+\textbf{Step 4: Build and Run}
+
+\begin{lstlisting}[language=bash]
+cd ~/ros2_ws
+
+# Build the package
+colcon build --packages-select drone_controller
+
+# Source the workspace
+source install/setup.bash
+
+# Run the node
+ros2 run drone_controller position_monitor
+\end{lstlisting}
+
+Now, with PX4 simulation and the Agent running, arm and takeoff the drone. You'll see your node printing position updates in real-time! This was incredibly satisfying when I first got it working.
+
+\textbf{Step 5: Writing a Command Publisher}
+
+Let's create a node that can send commands to PX4!
+
+Create file: \texttt{~/ros2\_ws/src/drone\_controller/drone\_controller/simple\_commander.py}
+
+\begin{lstlisting}[language=Python]
+#!/usr/bin/env python3
+
+import rclpy
+from rclpy.node import Node
+from px4_msgs.msg import VehicleCommand
+import time
+
+class SimpleCommander(Node):
+    def __init__(self):
+        super().__init__('simple_commander')
+        
+        # Publisher for vehicle commands
+        self.publisher = self.create_publisher(
+            VehicleCommand,
+            '/fmu/in/vehicle_command',
+            10
+        )
+        
+        self.get_logger().info('Simple Commander Node Started!')
+    
+    def arm(self):
+        """Arm the drone"""
+        msg = VehicleCommand()
+        msg.command = VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM
+        msg.param1 = 1.0  # 1 to arm, 0 to disarm
+        msg.target_system = 1
+        msg.target_component = 1
+        msg.source_system = 1
+        msg.source_component = 1
+        msg.from_external = True
+        
+        self.publisher.publish(msg)
+        self.get_logger().info('Arm command sent!')
+    
+    def disarm(self):
+        """Disarm the drone"""
+        msg = VehicleCommand()
+        msg.command = VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM
+        msg.param1 = 0.0  # 0 to disarm
+        msg.target_system = 1
+        msg.target_component = 1
+        msg.source_system = 1
+        msg.source_component = 1
+        msg.from_external = True
+        
+        self.publisher.publish(msg)
+        self.get_logger().info('Disarm command sent!')
+    
+    def takeoff(self, altitude=2.5):
+        """Takeoff to specified altitude"""
+        msg = VehicleCommand()
+        msg.command = VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF
+        msg.param7 = altitude  # Takeoff altitude in meters
+        msg.target_system = 1
+        msg.target_component = 1
+        msg.source_system = 1
+        msg.source_component = 1
+        msg.from_external = True
+        
+        self.publisher.publish(msg)
+        self.get_logger().info(f'Takeoff command sent! Target altitude: {altitude}m')
+    
+    def land(self):
+        """Land the drone"""
+        msg = VehicleCommand()
+        msg.command = VehicleCommand.VEHICLE_CMD_NAV_LAND
+        msg.target_system = 1
+        msg.target_component = 1
+        msg.source_system = 1
+        msg.source_component = 1
+        msg.from_external = True
+        
+        self.publisher.publish(msg)
+        self.get_logger().info('Land command sent!')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = SimpleCommander()
+    
+    # Simple autonomous mission
+    print("Starting autonomous mission in 3 seconds...")
+    time.sleep(3)
+    
+    print("Step 1: Arming...")
+    node.arm()
+    time.sleep(5)  # Wait for arming
+    
+    print("Step 2: Taking off...")
+    node.takeoff(altitude=3.0)
+    time.sleep(10)  # Wait for takeoff
+    
+    print("Step 3: Hovering for 5 seconds...")
+    time.sleep(5)
+    
+    print("Step 4: Landing...")
+    node.land()
+    time.sleep(10)  # Wait for landing
+    
+    print("Mission complete!")
+    
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+\end{lstlisting}
+
+Update \texttt{setup.py} to add this new node:
+
+\begin{lstlisting}[language=Python]
+entry_points={
+    'console_scripts': [
+        'position_monitor = drone_controller.position_monitor:main',
+        'simple_commander = drone_controller.simple_commander:main',
+    ],
+},
+\end{lstlisting}
+
+Build and run:
+\begin{lstlisting}[language=bash]
+cd ~/ros2_ws
+colcon build --packages-select drone_controller
+source install/setup.bash
+
+# Run the autonomous mission!
+ros2 run drone_controller simple_commander
+\end{lstlisting}
+
+Watch in Gazebo as your code autonomously controls the drone! This was an amazing moment for me—seeing the drone follow commands from my own code.
+
+\textbf{Complete Test Setup:}
+
+For a full test, you need 4 terminals:
+
+\begin{itemize}
+    \item \textbf{Terminal 1}: PX4 Simulation - \texttt{cd \textasciitilde/PX4-Autopilot \&\& make px4\_sitl gazebo-classic}
+    \item \textbf{Terminal 2}: DDS Agent - \texttt{cd chapter2 \&\& ./run\_agent.sh udp4 -p 8888}
+    \item \textbf{Terminal 3}: Position Monitor - \texttt{ros2 run drone\_controller position\_monitor}
+    \item \textbf{Terminal 4}: Commander - \texttt{ros2 run drone\_controller simple\_commander}
+\end{itemize}
+
+\subsection{What I Learned}
+
+By the end of this chapter, I understood:
+
+\begin{itemize}
+    \item How PX4 and ROS2 communicate through the XRCE-DDS bridge
+    \item How to subscribe to PX4 data in ROS2
+    \item How to send commands from ROS2 to PX4
+    \item The basics of creating ROS2 nodes for drone control
+    \item How to structure a simple autonomous mission
+\end{itemize}
+
+This chapter was challenging but incredibly rewarding. Being able to control the drone programmatically opens up endless possibilities for autonomous behaviors!
+
+\textit{Note: My understanding of ROS2 and message passing is still developing. The code examples here are simple starting points. There's much more to learn about topics like quality of service (QoS) settings, synchronization, and error handling.}
+
+\subsection{Offboard Mode and Autonomous Missions}
+
+After learning basic ROS2 communication with PX4, I moved on to implementing Offboard mode—a special flight mode where external programs (like my ROS2 nodes) take complete control of the drone. This is the foundation for autonomous flight!
+
+\subsubsection{Understanding Offboard Mode}
+
+Offboard mode allows external computers to control the drone's position, velocity, or attitude. Here's what I learned:
+
+\textbf{Key Concepts:}
+\begin{itemize}
+    \item \textbf{Setpoints}: Target positions, velocities, or attitudes you send to PX4
+    \item \textbf{Heartbeat}: Offboard control mode must be published at least 2Hz or PX4 exits the mode
+    \item \textbf{Continuous Streaming}: You must continuously send setpoints even when stationary
+    \item \textbf{Arm-then-Offboard}: The drone must be armed before switching to Offboard mode
+\end{itemize}
+
+\textbf{The NED Coordinate System:}
+
+One of the most confusing aspects for me was the coordinate system. PX4 uses NED (North-East-Down):
+\begin{itemize}
+    \item \textbf{X}: North is positive, South is negative
+    \item \textbf{Y}: East is positive, West is negative
+    \item \textbf{Z}: Down is positive, \textbf{Up is negative!} ⚠️
+\end{itemize}
+
+This means to fly to 5 meters altitude, I need to send $z = -5.0$, not $+5.0$. This caught me off guard initially!
+
+\subsubsection{Critical Topic Naming Discovery}
+
+I spent hours debugging why my ROS2 node wasn't receiving any data from PX4. Eventually, I discovered that PX4 uses a \texttt{\_v1} suffix on its output topics:
+
+\textbf{Correct topic names:}
+\begin{lstlisting}[language=Python]
+'/fmu/out/vehicle_status_v1'         # Not vehicle_status!
+'/fmu/out/vehicle_local_position_v1' # Not vehicle_local_position!
+\end{lstlisting}
+
+\textbf{Command topics (no suffix):}
+\begin{lstlisting}[language=Python]
+'/fmu/in/vehicle_command'
+'/fmu/in/offboard_control_mode'
+'/fmu/in/trajectory_setpoint'
+\end{lstlisting}
+
+This simple naming issue was the root cause of many frustrating hours. Once I fixed it, everything started working immediately!
+
+\subsubsection{Implementing Offboard Control}
+
+I created a complete autonomous mission script called \texttt{offboard\_control.py}. Here's the architecture I learned to implement:
+
+\textbf{QoS Configuration:}
+
+PX4 communication requires specific Quality of Service settings:
+
+\begin{lstlisting}[language=Python]
+from rclpy.qos import QoSProfile, ReliabilityPolicy, 
+                      HistoryPolicy, DurabilityPolicy
+
+qos_profile = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    durability=DurabilityPolicy.VOLATILE,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10
+)
+\end{lstlisting}
+
+I learned these settings are important because:
+\begin{itemize}
+    \item \texttt{BEST\_EFFORT}: Prioritizes low latency over guaranteed delivery
+    \item \texttt{VOLATILE}: Doesn't store historical messages
+    \item \texttt{depth=10}: Keeps last 10 messages in the queue
+\end{itemize}
+
+\textbf{Publishing Offboard Control Mode:}
+
+This heartbeat message tells PX4 what type of control you're using:
+
+\begin{lstlisting}[language=Python]
+def publish_offboard_control_mode(self):
+    """Must be called at 20Hz to maintain Offboard mode"""
+    msg = OffboardControlMode()
+    msg.position = True      # Position control
+    msg.velocity = False     # Not using velocity control
+    msg.acceleration = False # Not using acceleration control
+    msg.attitude = False     # Not using attitude control
+    msg.body_rate = False    # Not using body rate control
+    msg.timestamp = 0        # PX4 auto-fills this
+    self.offboard_control_mode_publisher.publish(msg)
+\end{lstlisting}
+
+\textbf{Publishing Position Setpoints:}
+
+This tells PX4 where you want the drone to be:
+
+\begin{lstlisting}[language=Python]
+def publish_position_setpoint(self, x, y, z, yaw=0.0):
+    """Send target position in NED coordinates"""
+    msg = TrajectorySetpoint()
+    msg.position = [x, y, z]  # NED: z negative = altitude!
+    msg.yaw = yaw             # Heading in radians
+    msg.timestamp = 0         # PX4 auto-fills
+    self.trajectory_setpoint_publisher.publish(msg)
+\end{lstlisting}
+
+\textbf{The Critical Control Sequence:}
+
+After much trial and error, I learned the correct sequence to enter Offboard mode:
+
+\begin{enumerate}
+    \item \textbf{Send setpoints first} (2 seconds, 40 loops @ 20Hz)
+    \item \textbf{Arm the drone} (VehicleCommand: ARM)
+    \item \textbf{Wait 0.25 seconds} (5 loops)
+    \item \textbf{Switch to Offboard mode} (VehicleCommand: DO\_SET\_MODE)
+    \item \textbf{Continue sending setpoints continuously}
+\end{enumerate}
+
+Here's the timing implementation I used:
+
+\begin{lstlisting}[language=Python]
+def timer_callback(self):
+    """Main control loop at 20Hz (50ms)"""
+    
+    # Always publish Offboard control mode (heartbeat)
+    self.publish_offboard_control_mode()
+    
+    # 0-2s: Send initial setpoints (prepare for Offboard)
+    if self.offboard_setpoint_counter < 40:
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 2s: Arm command
+    elif self.offboard_setpoint_counter == 40:
+        self.arm()
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 2s-2.25s: Keep sending setpoints while arming
+    elif 40 < self.offboard_setpoint_counter < 45:
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 2.25s: Switch to Offboard mode
+    elif self.offboard_setpoint_counter == 45:
+        self.engage_offboard_mode()
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    self.offboard_setpoint_counter += 1
+\end{lstlisting}
+
+Why this sequence? I learned that:
+\begin{itemize}
+    \item PX4 rejects Offboard mode if setpoints haven't been received
+    \item The drone must be armed before switching to Offboard
+    \item A quick transition (0.25s) prevents timeout errors
+\end{itemize}
+
+\subsubsection{My First Autonomous Mission}
+
+After getting Offboard mode working, I implemented a complete autonomous mission:
+
+\textbf{Mission Profile:}
+\begin{enumerate}
+    \item Takeoff to 5 meters altitude
+    \item Hold position for 7.5 seconds
+    \item Move forward 5 meters (North)
+    \item Move left 5 meters (East)
+    \item Return to home position
+    \item Land automatically
+\end{enumerate}
+
+\textbf{Implementation:}
+
+\begin{lstlisting}[language=Python]
+# After entering Offboard mode, execute waypoint sequence
+if self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD:
+    
+    # 2.25-7.5s: Takeoff to 5m
+    if self.offboard_setpoint_counter < 150:
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 7.5-15s: Hold at 5m
+    elif self.offboard_setpoint_counter < 300:
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 15-25s: Move forward 5m
+    elif self.offboard_setpoint_counter < 500:
+        self.publish_position_setpoint(5.0, 0.0, -5.0)
+    
+    # 25-35s: Move left 5m (square pattern)
+    elif self.offboard_setpoint_counter < 700:
+        self.publish_position_setpoint(5.0, 5.0, -5.0)
+    
+    # 35-45s: Return to home
+    elif self.offboard_setpoint_counter < 900:
+        self.publish_position_setpoint(0.0, 0.0, -5.0)
+    
+    # 45s: Land
+    elif self.offboard_setpoint_counter == 900:
+        self.land()
+        self.get_logger().info('=== Mission Complete ===')
+\end{lstlisting}
+
+\subsubsection{Running the Autonomous Mission}
+
+To execute the mission, I need 4 terminals:
+
+\textbf{Terminal 1: PX4 Simulation}
+\begin{lstlisting}[language=bash]
+cd ~/PX4-Autopilot
+make px4_sitl gazebo-classic
+\end{lstlisting}
+
+\textbf{Terminal 2: Micro XRCE-DDS Agent}
+\begin{lstlisting}[language=bash]
+cd ~/drone_simulator
+./run_agent.sh udp4 -p 8888
+\end{lstlisting}
+
+\textbf{Terminal 3: Monitor Topics (Optional)}
+\begin{lstlisting}[language=bash]
+source /opt/ros/galactic/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 topic echo /fmu/out/vehicle_status_v1
+\end{lstlisting}
+
+\textbf{Terminal 4: Run Offboard Control}
+\begin{lstlisting}[language=bash]
+cd ~/drone_simulator/chapter2
+source /opt/ros/galactic/setup.bash
+source ~/ros2_ws/install/setup.bash
+python3 offboard_control.py
+\end{lstlisting}
+
+\subsubsection{Success! My First Autonomous Flight}
+
+When everything finally worked, the output looked like this:
+
+\begin{verbatim}
+[INFO] [offboard_control]: === Offboard Control Node Started ===
+[INFO] [offboard_control]: >> Sending initial takeoff setpoints...
+[INFO] [offboard_control]: Arm command sent
+[INFO] [offboard_control]: >> Vehicle ARMED successfully!
+[INFO] [offboard_control]: Switching to Offboard mode
+[INFO] [offboard_control]: >> Nav state changed: 4 -> 14
+[INFO] [offboard_control]: >> OFFBOARD MODE ACTIVE!
+[INFO] [offboard_control]: >> [OFFBOARD] Starting takeoff to 5.0m...
+[INFO] [offboard_control]: [OFFBOARD] Position: x=0.00, y=0.00, z=-5.00
+[INFO] [offboard_control]: >> [OFFBOARD] Moving forward 5m...
+[INFO] [offboard_control]: [OFFBOARD] Position: x=5.03, y=0.17, z=-4.97
+[INFO] [offboard_control]: >> [OFFBOARD] Moving left 5m...
+[INFO] [offboard_control]: [OFFBOARD] Position: x=5.06, y=5.04, z=-4.96
+[INFO] [offboard_control]: >> [OFFBOARD] Returning to home...
+[INFO] [offboard_control]: [OFFBOARD] Position: x=-0.13, y=-0.14, z=-4.97
+[INFO] [offboard_control]: >> [OFFBOARD] Landing...
+[INFO] [offboard_control]: >> Nav state changed: 14 -> 18
+[INFO] [offboard_control]: === Mission Complete ===
+\end{verbatim}
+
+Watching the drone execute this mission autonomously in Gazebo was incredibly satisfying. The accuracy was impressive—the drone reached each waypoint within centimeters of the target!
+
+\subsubsection{Key Debugging Lessons}
+
+Throughout this process, I learned several critical debugging techniques:
+
+\textbf{1. Always check topic names with \texttt{\_v1} suffix}
+
+\textbf{2. Monitor navigation state changes:}
+\begin{itemize}
+    \item State 4 (ACRO) → Normal pre-flight state
+    \item State 14 (OFFBOARD) → External control active
+    \item State 18 (LAND) → Landing mode
+\end{itemize}
+
+\textbf{3. Verify callbacks are firing:}
+
+I added debug logging to confirm data reception:
+\begin{lstlisting}[language=Python]
+def vehicle_status_callback(self, vehicle_status):
+    if self.offboard_setpoint_counter == 0:
+        self.get_logger().info('First vehicle_status received!')
+    # ... rest of callback
+\end{lstlisting}
+
+\textbf{4. Use the correct QoS settings}
+
+Initially, I tried \texttt{TRANSIENT\_LOCAL} durability, which didn't work. Switching to \texttt{VOLATILE} with \texttt{BEST\_EFFORT} reliability solved the issue.
+
+\subsubsection{What I Learned}
+
+By completing this chapter, I now understand:
+
+\begin{itemize}
+    \item How to implement Offboard mode control in PX4
+    \item The importance of continuous setpoint streaming
+    \item NED coordinate system and its implications
+    \item Proper control sequence: setpoints → arm → offboard → mission
+    \item QoS settings for PX4 communication
+    \item Topic naming conventions (\texttt{\_v1} suffix!)
+    \item How to create autonomous waypoint missions
+    \item Debugging techniques for ROS2-PX4 integration
+\end{itemize}
+
+\textbf{Mission Timeline Summary:}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Time (s)} & \textbf{Counter} & \textbf{Action} & \textbf{Setpoint (x,y,z)} \\
+\hline
+0-2 & 0-40 & Send initial setpoints & (0, 0, -5) \\
+2.0 & 40 & ARM command & (0, 0, -5) \\
+2.25 & 45 & OFFBOARD mode switch & (0, 0, -5) \\
+2.25-7.5 & 45-150 & Takeoff to 5m & (0, 0, -5) \\
+7.5-15 & 150-300 & Hold altitude & (0, 0, -5) \\
+15-25 & 300-500 & Move forward & (5, 0, -5) \\
+25-35 & 500-700 & Move left & (5, 5, -5) \\
+35-45 & 700-900 & Return home & (0, 0, -5) \\
+45 & 900 & LAND command & - \\
+\hline
+\end{tabular}
+\caption{Autonomous Mission Timeline (20Hz control loop)}
+\end{table}
+
+This chapter was the most challenging so far, but also the most rewarding. Seeing the drone follow my programmed waypoints autonomously felt like a huge achievement. I now have a solid foundation for more complex autonomous behaviors!
+
+\textit{Note: The complete offboard\_control.py script with all error handling and logging is available in the chapter2/ directory of the project repository.}
+
+\section{Chapter 3: Sensor Data Integration}
+
+This chapter explores the various sensors available in the PX4 simulation environment and how to access their data through ROS2. Understanding sensor data is crucial for implementing SLAM, obstacle avoidance, and autonomous navigation.
+
+\subsection{Available Sensor Models}
+
+When I started exploring sensor options, I discovered that PX4 provides multiple pre-configured drone models with different sensor setups. The default \texttt{iris} model includes only basic sensors (IMU, GPS, barometer), but specialized variants are available with additional sensors.
+
+\textbf{Available Iris Variants:}
+
+\begin{itemize}
+    \item \textbf{iris} - Default model with basic sensors (IMU, GPS, barometer)
+    \item \textbf{iris\_depth\_camera} - Single forward-facing depth camera
+    \item \textbf{iris\_triple\_depth\_camera} - Three depth cameras (forward, left, right)
+    \item \textbf{iris\_downward\_depth\_camera} - Downward-facing depth camera
+    \item \textbf{iris\_stereo\_camera} - Stereo vision system
+    \item \textbf{iris\_rplidar} - 2D LiDAR sensor (360° scanning)
+    \item \textbf{iris\_foggy\_lidar} - LiDAR with fog simulation
+    \item \textbf{iris\_vision} - Standard RGB camera
+    \item \textbf{iris\_dual\_gps} - Dual GPS for improved accuracy
+    \item \textbf{iris\_opt\_flow} - Optical flow sensor for indoor navigation
+\end{itemize}
+
+For SLAM and obstacle avoidance applications, the depth camera and LiDAR variants are most relevant.
+
+\subsection{Launching with Depth Camera}
+
+To launch the simulation with a depth camera equipped drone:
+
+\begin{lstlisting}[language=bash]
+cd PX4-Autopilot
+make px4_sitl gazebo-classic_iris_depth_camera
+\end{lstlisting}
+
+When the simulation starts, you should see initialization messages confirming the camera is loaded:
+
+\begin{verbatim}
+[INFO] Publishing camera info to [/camera/camera_info]
+[INFO] Publishing depth camera info to [/camera/depth/camera_info]
+[INFO] Publishing pointcloud to [/camera/points]
+\end{verbatim}
+
+\subsection{Basic Sensor Topics}
+
+With the depth camera model running, several sensor-related topics become available:
+
+\textbf{Basic Flight Sensors (available on all models):}
+\begin{lstlisting}[language=bash]
+/fmu/out/sensor_combined          # IMU data (accel, gyro, mag)
+/fmu/out/vehicle_gps_position     # GPS position
+/fmu/out/vehicle_attitude         # Orientation (roll, pitch, yaw)
+/fmu/out/vehicle_local_position_v1 # Local position in NED
+/fmu/out/battery_status_v1        # Battery state
+\end{lstlisting}
+
+\textbf{Depth Camera Topics (iris\_depth\_camera model):}
+\begin{lstlisting}[language=bash]
+/camera/camera_info               # Camera calibration info
+/camera/depth/camera_info         # Depth camera parameters
+/camera/depth/image_raw           # Raw depth image (distance data)
+/camera/image_raw                 # RGB image
+/camera/points                    # 3D point cloud (PointCloud2)
+\end{lstlisting}
+
+\subsection{Monitoring Sensor Data}
+
+\subsubsection{Viewing IMU Data}
+
+The sensor\_combined topic provides high-rate IMU data:
+
+\begin{lstlisting}[language=bash]
+# Terminal 1: Launch simulation
+cd PX4-Autopilot
+make px4_sitl gazebo-classic_iris_depth_camera
+
+# Terminal 2: Start DDS Agent
+cd ~/drone_simulator
+./run_agent.sh udp4 -p 8888
+
+# Terminal 3: Monitor IMU data
+source /opt/ros/galactic/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 topic echo /fmu/out/sensor_combined
+\end{lstlisting}
+
+You'll see accelerometer and gyroscope readings updating at high frequency:
+
+\begin{verbatim}
+gyro_rad: [0.001, -0.002, 0.000]
+accelerometer_m_s2: [0.05, -0.12, -9.81]
+\end{verbatim}
+
+\subsubsection{Viewing Depth Camera Data}
+
+To see the point cloud data structure:
+
+\begin{lstlisting}[language=bash]
+ros2 topic echo /camera/points --once
+\end{lstlisting}
+
+This will display a \texttt{sensor\_msgs/PointCloud2} message containing 3D points captured by the depth camera.
+
+\textbf{Point Cloud Properties:}
+\begin{itemize}
+    \item \textbf{Width}: 848 pixels
+    \item \textbf{Height}: 480 pixels
+    \item \textbf{Fields}: x, y, z coordinates (in meters)
+    \item \textbf{Range}: 0.2m to 65m (Intel RealSense D455 simulation)
+    \item \textbf{Update Rate}: 10 Hz
+\end{itemize}
+
+\subsubsection{Checking Topic Rates}
+
+To verify sensor update frequencies:
+
+\begin{lstlisting}[language=bash]
+# IMU data rate (should be ~250 Hz)
+ros2 topic hz /fmu/out/sensor_combined
+
+# Point cloud rate (should be ~10 Hz)
+ros2 topic hz /camera/points
+
+# Position updates (should be ~50 Hz)
+ros2 topic hz /fmu/out/vehicle_local_position_v1
+\end{lstlisting}
+
+\subsection{Understanding Sensor Coordinate Frames}
+
+One important aspect I learned is that different sensors use different coordinate frames:
+
+\textbf{PX4 (NED Frame):}
+\begin{itemize}
+    \item X: North (forward)
+    \item Y: East (right)
+    \item Z: Down (negative altitude)
+\end{itemize}
+
+\textbf{Camera Frame (ROS Convention):}
+\begin{itemize}
+    \item X: Right
+    \item Y: Down
+    \item Z: Forward (optical axis)
+\end{itemize}
+
+When integrating sensor data, coordinate transformations may be necessary. The \texttt{/tf} and \texttt{/tf\_static} topics provide these transformations.
+
+\subsection{Visualizing Sensor Data in RViz2}
+
+One challenge I encountered was visualizing depth camera data in RViz2. The issue was a Quality of Service (QoS) mismatch: Gazebo publishes with \texttt{BEST\_EFFORT} reliability, while RViz2 expects \texttt{RELIABLE} reliability by default.
+
+\subsubsection{The QoS Problem}
+
+When I tried to display depth images directly in RViz2, I saw this warning:
+
+\begin{verbatim}
+[WARN] New subscription discovered on topic '/camera/depth/image_raw', 
+requesting incompatible QoS. No messages will be sent to it. 
+Last incompatible policy: RELIABILITY_QOS_POLICY
+\end{verbatim}
+
+This means the QoS settings didn't match, preventing data from flowing to RViz.
+
+\subsubsection{Solution: QoS Converter Node}
+
+I created a converter node that subscribes with \texttt{BEST\_EFFORT} QoS (matching Gazebo) and republishes with \texttt{RELIABLE} QoS (for RViz compatibility).
+
+Create \texttt{chapter3/depth\_camera\_viewer.py}:
+
+\begin{lstlisting}[language=Python]
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from sensor_msgs.msg import Image, PointCloud2
+
+class DepthCameraViewer(Node):
+    def __init__(self):
+        super().__init__('depth_camera_viewer')
+        
+        # QoS for Gazebo (BEST_EFFORT)
+        qos_sensor = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        
+        # QoS for RViz (RELIABLE)
+        qos_reliable = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        
+        # Subscribe from Gazebo
+        self.depth_sub = self.create_subscription(
+            Image, '/camera/depth/image_raw',
+            self.depth_callback, qos_sensor
+        )
+        
+        # Republish for RViz
+        self.depth_pub = self.create_publisher(
+            Image, '/camera/depth/image_raw/reliable',
+            qos_reliable
+        )
+    
+    def depth_callback(self, msg):
+        self.depth_pub.publish(msg)
+
+def main():
+    rclpy.init()
+    node = DepthCameraViewer()
+    rclpy.spin(node)
+\end{lstlisting}
+
+\subsubsection{Running the Visualization}
+
+\textbf{Terminal 1: PX4 Simulation}
+\begin{lstlisting}[language=bash]
+cd ~/PX4-Autopilot
+make px4_sitl gazebo-classic_iris_depth_camera
+\end{lstlisting}
+
+\textbf{Terminal 2: DDS Agent}
+\begin{lstlisting}[language=bash]
+cd ~/drone_simulator
+./run_agent.sh udp4 -p 8888
+\end{lstlisting}
+
+\textbf{Terminal 3: QoS Converter}
+\begin{lstlisting}[language=bash]
+cd ~/drone_simulator/chapter3
+python3 depth_camera_viewer.py
+\end{lstlisting}
+
+Expected output:
+\begin{verbatim}
+[INFO] Depth Camera Viewer Node Started
+[INFO] Subscribing to Gazebo topics with BEST_EFFORT QoS
+[INFO] Republishing with RELIABLE QoS for RViz
+[INFO] Messages received - Depth: 20, RGB: 19
+\end{verbatim}
+
+\textbf{Terminal 4: RViz2}
+\begin{lstlisting}[language=bash]
+ros2 run rviz2 rviz2
+\end{lstlisting}
+
+\subsubsection{Configuring RViz2}
+
+Once RViz2 is open:
+
+\textbf{1. Set Fixed Frame:}
+\begin{itemize}
+    \item Left panel: \texttt{Fixed Frame} → Set to \texttt{base\_link} or \texttt{map}
+\end{itemize}
+
+\textbf{2. Add Depth Image:}
+\begin{itemize}
+    \item Click \texttt{Add} button (bottom left)
+    \item Select \texttt{By topic} tab
+    \item Find \texttt{/camera/depth/image\_raw/reliable}
+    \item Select \texttt{Image}
+    \item Click \texttt{OK}
+\end{itemize}
+
+\textbf{3. Add RGB Image:}
+\begin{itemize}
+    \item Click \texttt{Add}
+    \item Select \texttt{/camera/image\_raw/reliable} → \texttt{Image}
+\end{itemize}
+
+\textbf{4. Add Point Cloud (3D visualization):}
+\begin{itemize}
+    \item Click \texttt{Add}
+    \item Select \texttt{/camera/points/reliable} → \texttt{PointCloud2}
+    \item In PointCloud2 settings:
+    \begin{itemize}
+        \item \texttt{Style}: Points or Flat Squares
+        \item \texttt{Size (Pixels)}: 3-5
+        \item \texttt{Color Transformer}: RGB8 or AxisColor
+    \end{itemize}
+\end{itemize}
+
+You should now see the depth camera data visualized in RViz2! The depth image shows distance information (closer objects appear darker), and the point cloud displays a 3D representation of the environment.
+
+\subsubsection{Available Topics Summary}
+
+\textbf{Original Gazebo Topics (BEST\_EFFORT):}
+\begin{lstlisting}[language=bash]
+/camera/depth/image_raw      # Depth image
+/camera/image_raw            # RGB image  
+/camera/points               # Point cloud
+\end{lstlisting}
+
+\textbf{RViz-Compatible Topics (RELIABLE):}
+\begin{lstlisting}[language=bash]
+/camera/depth/image_raw/reliable    # For RViz
+/camera/image_raw/reliable          # For RViz
+/camera/points/reliable             # For RViz
+\end{lstlisting}
+
+\subsection{What I Learned}
+
+By exploring the sensor options, I now understand:
+
+\begin{itemize}
+    \item PX4 provides multiple pre-configured sensor models
+    \item Depth cameras generate 3D point clouds suitable for SLAM
+    \item Basic sensors (IMU, GPS) are always available
+    \item Different sensors have different update rates and coordinate frames
+    \item The \texttt{/camera/points} topic is key for 3D perception
+    \item QoS settings must match between publishers and subscribers
+    \item RViz2 can visualize depth images and point clouds effectively
+    \item QoS converter nodes solve compatibility issues
+\end{itemize}
+
+The depth camera model provides everything needed to start implementing SLAM and obstacle avoidance, which will be covered in the next chapters.
+
+\textit{Note: For more advanced 3D perception, consider using the iris\_triple\_depth\_camera model, which provides wider field-of-view coverage with three cameras mounted at different angles.}
+
+\section{Chapter 4: SLAM Integration}
+
+\textit{This chapter is planned for future development. It will cover integrating Simultaneous Localization and Mapping (SLAM) with the drone system, including adding depth sensors to the Gazebo model, implementing SLAM algorithms (RTAB-Map, Cartographer, ORB-SLAM3), generating maps in simulation, and using those maps for localization.}
+
+\section{Chapter 5: Navigation in Static Environments}
+
+\textit{This chapter is planned for future development. It will focus on autonomous navigation in known, static environments. Topics will include path planning algorithms (A*, RRT, visibility graphs), working with occupancy grid maps, trajectory generation, waypoint following, and integrating path planning with Offboard control mode.}
+
+\section{Chapter 6: Navigation in Dynamic Environments}
+
+\textit{This chapter is planned for future development. It will extend navigation capabilities to handle moving obstacles and dynamic environments. Topics will include real-time obstacle detection, reactive navigation algorithms (DWA, potential fields), advanced obstacle avoidance strategies, emergency maneuvers, and complete autonomous missions that integrate all previous chapters.}
+
+\section{Conclusion}
+
+Summary of what was learned and future directions.
+
+\section{References}
+
+\begin{thebibliography}{9}
+\bibitem{px4docs}
+PX4 Development Team. 2024. PX4 Development Guide. Retrieved from \url{https://docs.px4.io/}
+
+\bibitem{ros2docs}
+Open Robotics. 2024. ROS2 Documentation. Retrieved from \url{https://docs.ros.org/}
+
+\bibitem{gazebo}
+Open Source Robotics Foundation. 2024. Gazebo Simulator. Retrieved from \url{https://gazebosim.org/}
+\end{thebibliography}
+
+\section*{Code Repository}
+
+Complete code is available at: \url{https://github.com/93won/drone_simulator}
+
+All installation scripts and examples can be found in the repository.
+
+\end{document}

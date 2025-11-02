@@ -21,10 +21,20 @@ drone_simulator/
 │   └── INSTALL_GUIDE.md
 ├── chapter1/          # Basic Flight Operations
 │   └── README.md
-├── chapter2/          # ROS2 Integration (Coming soon)
-├── chapter3/          # SLAM (Coming soon)
-├── chapter4/          # Autonomous Navigation (Coming soon)
+├── chapter2/          # ROS2 Integration & Offboard Control
+│   ├── README.md
+│   ├── INSTALL.md
+│   ├── install_chapter2.sh
+│   ├── offboard_control.py
+│   └── run_test.sh
+├── chapter3/          # Sensor Data Integration (Coming soon)
+├── chapter4/          # SLAM Integration (Coming soon)
+├── chapter5/          # Navigation in Static Environment (Coming soon)
+├── chapter6/          # Navigation in Dynamic Environment (Coming soon)
 ├── PX4-Autopilot/     # Shared PX4 source code
+├── Micro-XRCE-DDS-Agent/  # Communication bridge
+├── agent_install/     # Local Agent installation
+├── run_agent.sh       # Helper script to run Agent
 └── README.md          # This file
 ```
 
@@ -43,20 +53,37 @@ Follow these chapters in order to build your autonomous drone system:
   - Control drone with PX4 commands
   - Monitor sensor data
   
-- **Chapter 2: ROS2 Integration** (Coming soon)
-  - Setup PX4 ↔ ROS2 communication
-  - Create control nodes
-  - Subscribe to sensor topics
+- **[Chapter 2: ROS2 Integration & Offboard Control](./chapter2/README.md)** ✅
+  - Setup PX4 ↔ ROS2 communication bridge (Micro XRCE-DDS Agent)
+  - Build px4_msgs for ROS2 (236 message types)
+  - Create autonomous control nodes
+  - Implement Offboard mode control
+  - Execute waypoint navigation missions
+  - Complete autonomous flight: Takeoff → Navigate → Land
   
-- **Chapter 3: SLAM** (Coming soon)
-  - Add camera/LiDAR sensors
-  - Implement mapping
-  - Localization
+- **Chapter 3: Sensor Data Integration** (Coming soon)
+  - Understand available sensor streams
+  - Monitor IMU, GPS, depth sensors
+  - Data logging and visualization
+  - Sensor fusion fundamentals
   
-- **Chapter 4: Autonomous Navigation** (Coming soon)
-  - Path planning
-  - Obstacle avoidance
-  - A → B autonomous flight
+- **Chapter 4: SLAM Integration** (Coming soon)
+  - Add depth camera/LiDAR sensors
+  - Implement visual or LiDAR SLAM
+  - Generate and save maps
+  - Localization in known maps
+  
+- **Chapter 5: Navigation in Static Environments** (Coming soon)
+  - Path planning algorithms (A*, RRT)
+  - Use pre-built maps
+  - Autonomous waypoint navigation
+  - Integration with Offboard control
+  
+- **Chapter 6: Navigation in Dynamic Environments** (Coming soon)
+  - Dynamic obstacle detection
+  - Reactive navigation (DWA, potential fields)
+  - Real-time path re-planning
+  - Complete autonomous missions with obstacle avoidance
 
 ---
 
@@ -162,23 +189,30 @@ commander land      # Land safely
 - [x] Learn Gazebo controls (Chapter 1)
 - [x] First flight complete! 🎉
 
-### Phase 2: ROS2 Integration (Chapter 2 - Coming Soon)
-- [ ] Setup PX4 ↔ ROS2 communication
-- [ ] Monitor sensor topics in ROS2
-- [ ] Create simple control nodes
-- [ ] Programmatic drone control
+### Phase 2: ROS2 Integration & Autonomous Control ✅
+- [x] Setup PX4 ↔ ROS2 communication (Micro XRCE-DDS Agent)
+- [x] Monitor sensor topics in ROS2 (`/fmu/out/*`)
+- [x] Send commands via ROS2 (`/fmu/in/*`)
+- [x] Create autonomous control nodes (Python)
+- [x] Implement Offboard mode control
+- [x] Execute autonomous missions (waypoint navigation)
+- [x] Complete autonomous flight tested successfully! 🎉
 
-### Phase 3: SLAM (Chapter 3 - Coming Soon)
-- [ ] Add camera/LiDAR sensors
-- [ ] Install RTAB-Map or Cartographer
-- [ ] Test map generation
-- [ ] Real-time localization
+### Phase 3: SLAM (Chapter 3 & 4 - Coming Soon)
+- [ ] Understand and monitor sensor data streams
+- [ ] Add depth camera/LiDAR sensors to drone
+- [ ] Install RTAB-Map or Cartographer SLAM
+- [ ] Generate maps in simulation
+- [ ] Save and reload maps for navigation
+- [ ] Test localization accuracy
 
-### Phase 4: Autonomous Navigation (Chapter 4 - Coming Soon)
-- [ ] Implement path planning algorithms
-- [ ] Offboard mode control
-- [ ] A → B autonomous movement
-- [ ] Obstacle avoidance
+### Phase 4: Autonomous Navigation (Chapter 5 & 6 - Coming Soon)
+- [ ] Implement path planning algorithms (A*, RRT)
+- [ ] Navigate in static environments with known maps
+- [ ] Detect and track dynamic obstacles
+- [ ] Implement reactive navigation (DWA, potential fields)
+- [ ] Complete autonomous missions with obstacle avoidance
+- [ ] Full A → B navigation with safety guarantees
 
 ---
 
@@ -208,6 +242,8 @@ For detailed troubleshooting guides, see:
 ### Chapter-Specific Guides
 - [Chapter 0: Installation Guide](./chapter0/INSTALL_GUIDE.md)
 - [Chapter 1: Getting Started Guide](./chapter1/README.md)
+- [Chapter 2: ROS2 Integration Guide](./chapter2/README.md)
+- [Chapter 2: Installation Guide](./chapter2/INSTALL.md)
 
 ---
 

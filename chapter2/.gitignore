@@ -1,0 +1,16 @@
+# Micro XRCE-DDS Agent
+Micro-XRCE-DDS-Agent/
+agent_install/
+
+# ROS2 workspace (built in home directory, not here)
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
