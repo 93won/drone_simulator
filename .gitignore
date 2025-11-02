@@ -1,0 +1,29 @@
+# PX4-Autopilot (External source code)
+PX4-Autopilot/
+
+# Build artifacts
+build/
+*.o
+*.so
+*.a
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
