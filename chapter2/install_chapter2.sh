@@ -65,28 +65,24 @@ fi
 ################################################################################
 echo -e "\n${YELLOW}[3/5] Setting up PX4 messages for ROS2...${NC}"
 
-if [ ! -d "$HOME/ros2_ws/src/px4_msgs" ]; then
+ROS2_WS="$SCRIPT_DIR/../ros2_ws"
+
+if [ ! -d "$ROS2_WS/src/px4_msgs" ]; then
     echo "Creating ROS2 workspace and cloning px4_msgs..."
-    mkdir -p ~/ros2_ws/src
-    cd ~/ros2_ws/src
+    mkdir -p "$ROS2_WS/src"
+    cd "$ROS2_WS/src"
     git clone https://github.com/PX4/px4_msgs.git
-    cd ~/ros2_ws
+    cd "$ROS2_WS"
     
     echo "Building px4_msgs package (takes 2-3 minutes)..."
     colcon build
     
     echo -e "${GREEN}✓ px4_msgs built successfully${NC}"
-    
-    # Add to bashrc if not already there
-    if ! grep -q "source ~/ros2_ws/install/setup.bash" ~/.bashrc; then
-        echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
-        echo -e "${GREEN}✓ Added ros2_ws to ~/.bashrc${NC}"
-    fi
 else
     echo -e "${BLUE}px4_msgs already exists. Skipping build.${NC}"
 fi
 
-source ~/ros2_ws/install/setup.bash
+source "$ROS2_WS/install/setup.bash"
 
 ################################################################################
 # Step 4: Install Micro XRCE-DDS Agent with DDS Support
@@ -94,30 +90,35 @@ source ~/ros2_ws/install/setup.bash
 echo -e "\n${YELLOW}[4/5] Installing Micro XRCE-DDS Agent...${NC}"
 echo -e "${BLUE}Important: Building with system FastDDS/CycloneDDS support${NC}"
 
-cd "$SCRIPT_DIR"
+AGENT_DIR="$SCRIPT_DIR/../Micro-XRCE-DDS-Agent"
 
 # Clone if not exists
-if [ ! -d "Micro-XRCE-DDS-Agent" ]; then
+if [ ! -d "$AGENT_DIR" ]; then
     echo "Cloning Micro XRCE-DDS Agent..."
+    cd "$SCRIPT_DIR/.."
     git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
 fi
 
-cd Micro-XRCE-DDS-Agent
+cd "$AGENT_DIR"
 mkdir -p build
 cd build
 
-echo "Configuring CMake with system FastDDS support..."
-echo -e "${YELLOW}This ensures proper DDS middleware detection at runtime${NC}"
+echo "Configuring CMake (building fastcdr internally)..."
+echo -e "${YELLOW}ROS2 Galactic has fastcdr 1.0.20, but Agent needs 2.x${NC}"
+echo -e "${YELLOW}Building fastcdr 2.x internally to avoid conflict${NC}"
 
 # Source ROS2 environment before building
 source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+ROS2_WS="$SCRIPT_DIR/../ros2_ws"
+if [ -f "$ROS2_WS/install/setup.bash" ]; then
+    source "$ROS2_WS/install/setup.bash"
+fi
 
-# Build with system FastDDS/FastCDR (uses ROS2's DDS libraries)
+# Build WITHOUT system FastCDR (let Agent build its own fastcdr 2.x)
 cmake .. \
-    -DUAGENT_USE_SYSTEM_FASTDDS=ON \
-    -DUAGENT_USE_SYSTEM_FASTCDR=ON \
-    -DCMAKE_INSTALL_PREFIX=../../agent_install
+    -DUAGENT_USE_SYSTEM_FASTDDS=OFF \
+    -DUAGENT_USE_SYSTEM_FASTCDR=OFF \
+    -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../agent_install"
 
 echo "Building Agent (takes 2-3 minutes)..."
 make -j$(nproc)
@@ -125,7 +126,7 @@ make -j$(nproc)
 echo "Installing Agent to agent_install/ directory..."
 make install
 
-cd ../..
+cd "$SCRIPT_DIR"
 
 echo -e "${GREEN}✓ Micro XRCE-DDS Agent installed successfully${NC}"
 
@@ -139,14 +140,18 @@ cat > run_agent.sh << 'EOF'
 # Helper script to run MicroXRCEAgent with proper library path and ROS2 environment
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROS2_WS="$SCRIPT_DIR/../ros2_ws"
+AGENT_INSTALL="$SCRIPT_DIR/../agent_install"
 
 # Source ROS2 environment to enable DDS middleware
 source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+if [ -f "$ROS2_WS/install/setup.bash" ]; then
+    source "$ROS2_WS/install/setup.bash"
+fi
 
-export LD_LIBRARY_PATH="$SCRIPT_DIR/agent_install/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$AGENT_INSTALL/lib:$LD_LIBRARY_PATH"
 
-"$SCRIPT_DIR/agent_install/bin/MicroXRCEAgent" "$@"
+"$AGENT_INSTALL/bin/MicroXRCEAgent" "$@"
 EOF
 
 chmod +x run_agent.sh
@@ -162,7 +167,7 @@ echo -e "${GREEN}========================================${NC}"
 
 echo -e "\n${YELLOW}Testing the Installation:${NC}"
 echo -e "\n${BLUE}Terminal 1 - Start PX4 Simulation:${NC}"
-echo -e "  ${GREEN}cd ~/PX4-Autopilot${NC}"
+echo -e "  ${GREEN}cd ../PX4-Autopilot${NC}"
 echo -e "  ${GREEN}make px4_sitl gazebo-classic${NC}"
 
 echo -e "\n${BLUE}Terminal 2 - Start Micro XRCE-DDS Agent:${NC}"

@@ -2,6 +2,7 @@
 PX4-Autopilot/
 Micro-XRCE-DDS-Agent/
 agent_install/
+row2_ws/
 
 # Build artifacts
 build/
