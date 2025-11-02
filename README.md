@@ -62,28 +62,13 @@ Follow these chapters in order to build your autonomous drone system:
   - Complete autonomous flight: Takeoff → Navigate → Land
   
 - **Chapter 3: Sensor Data Integration** (Coming soon)
-  - Understand available sensor streams
-  - Monitor IMU, GPS, depth sensors
-  - Data logging and visualization
-  - Sensor fusion fundamentals
-  
+
 - **Chapter 4: SLAM Integration** (Coming soon)
-  - Add depth camera/LiDAR sensors
-  - Implement visual or LiDAR SLAM
-  - Generate and save maps
-  - Localization in known maps
   
 - **Chapter 5: Navigation in Static Environments** (Coming soon)
-  - Path planning algorithms (A*, RRT)
-  - Use pre-built maps
-  - Autonomous waypoint navigation
-  - Integration with Offboard control
   
 - **Chapter 6: Navigation in Dynamic Environments** (Coming soon)
-  - Dynamic obstacle detection
-  - Reactive navigation (DWA, potential fields)
-  - Real-time path re-planning
-  - Complete autonomous missions with obstacle avoidance
+
 
 ---
 
