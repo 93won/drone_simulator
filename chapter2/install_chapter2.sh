@@ -3,7 +3,7 @@
 ################################################################################
 # Chapter 2: ROS2-PX4 Integration Setup Script
 # Micro XRCE-DDS Agent Installation with DDS Middleware Support
-# For Ubuntu 20.04 + ROS2 Galactic
+# For Ubuntu 22.04 + ROS2 Humble (also supports Ubuntu 20.04 + ROS2 Galactic)
 ################################################################################
 
 set -e  # Stop script on error
@@ -51,13 +51,26 @@ fi
 ################################################################################
 echo -e "\n${YELLOW}[2/5] Checking ROS2 installation...${NC}"
 
-if [ -f "/opt/ros/galactic/setup.bash" ]; then
+if [ -f "/opt/ros/humble/setup.bash" ]; then
+    echo -e "${GREEN}✓ ROS2 Humble detected${NC}"
+    source /opt/ros/humble/setup.bash
+elif [ -f "/opt/ros/galactic/setup.bash" ]; then
     echo -e "${GREEN}✓ ROS2 Galactic detected${NC}"
     source /opt/ros/galactic/setup.bash
 else
-    echo -e "${RED}✗ ROS2 Galactic not found${NC}"
-    echo -e "${YELLOW}Please install ROS2 Galactic first${NC}"
+    echo -e "${RED}✗ ROS2 not found${NC}"
+    echo -e "${YELLOW}Please install ROS2 Humble or Galactic first${NC}"
     exit 1
+fi
+
+# Install colcon if not present
+if ! command -v colcon &> /dev/null; then
+    echo -e "${YELLOW}colcon not found. Installing...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y python3-colcon-common-extensions
+    echo -e "${GREEN}✓ colcon installed${NC}"
+else
+    echo -e "${GREEN}✓ colcon already installed${NC}"
 fi
 
 ################################################################################
@@ -72,14 +85,16 @@ if [ ! -d "$ROS2_WS/src/px4_msgs" ]; then
     mkdir -p "$ROS2_WS/src"
     cd "$ROS2_WS/src"
     git clone https://github.com/PX4/px4_msgs.git
-    cd "$ROS2_WS"
-    
+fi
+
+# Always build if install directory doesn't exist
+if [ ! -f "$ROS2_WS/install/setup.bash" ]; then
     echo "Building px4_msgs package (takes 2-3 minutes)..."
+    cd "$ROS2_WS"
     colcon build
-    
     echo -e "${GREEN}✓ px4_msgs built successfully${NC}"
 else
-    echo -e "${BLUE}px4_msgs already exists. Skipping build.${NC}"
+    echo -e "${BLUE}px4_msgs already built. Skipping.${NC}"
 fi
 
 source "$ROS2_WS/install/setup.bash"
@@ -108,7 +123,11 @@ echo -e "${YELLOW}ROS2 Galactic has fastcdr 1.0.20, but Agent needs 2.x${NC}"
 echo -e "${YELLOW}Building fastcdr 2.x internally to avoid conflict${NC}"
 
 # Source ROS2 environment before building
-source /opt/ros/galactic/setup.bash
+if [ -f "/opt/ros/humble/setup.bash" ]; then
+    source /opt/ros/humble/setup.bash
+elif [ -f "/opt/ros/galactic/setup.bash" ]; then
+    source /opt/ros/galactic/setup.bash
+fi
 ROS2_WS="$SCRIPT_DIR/../ros2_ws"
 if [ -f "$ROS2_WS/install/setup.bash" ]; then
     source "$ROS2_WS/install/setup.bash"

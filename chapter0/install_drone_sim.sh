@@ -2,7 +2,7 @@
 
 ################################################################################
 # PX4 + Gazebo Drone Simulation Environment Installation Script
-# For Ubuntu 20.04 + ROS2 Galactic
+# For Ubuntu 22.04 + ROS2 Humble
 ################################################################################
 
 set -e  # Stop script on error
@@ -24,16 +24,14 @@ echo -e "\n${YELLOW}[1/6] Updating system packages...${NC}"
 sudo apt-get update
 
 ################################################################################
-# Step 2: Install Gazebo 11
+# Step 2: Install Gazebo (Gazebo Classic)
 ################################################################################
-echo -e "\n${YELLOW}[2/6] Installing Gazebo 11...${NC}"
+echo -e "\n${YELLOW}[2/6] Installing Gazebo Classic...${NC}"
 echo "Gazebo is a 3D physics simulator. It simulates drone dynamics, sensors, and environments."
 
 sudo apt-get install -y \
-    gazebo11 \
-    libgazebo11-dev \
-    ros-galactic-gazebo-ros-pkgs \
-    ros-galactic-gazebo-plugins \
+    gazebo \
+    libgazebo-dev \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev \
     gstreamer1.0-plugins-base \
@@ -42,7 +40,7 @@ sudo apt-get install -y \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav
 
-echo -e "${GREEN}✓ Gazebo 11 installation completed${NC}"
+echo -e "${GREEN}✓ Gazebo installation completed${NC}"
 
 ################################################################################
 # Step 3: Install PX4 Dependencies
