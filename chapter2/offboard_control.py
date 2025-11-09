@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """
+@file      offboard_control.py
+@brief     Offboard Control Node for PX4 with smooth landing
+@author    Eugene (93won)
+@date      2025-11-09
+@copyright Copyright (c) 2025 Eugene. All rights reserved.
+
+@par License
+This project is released under the MIT License.
+
+@par Description
 Offboard Control Node for PX4
 Chapter 2 - ROS2-PX4 Integration Example
 
-기능:
-1. Offboard 모드로 전환
-2. 특정 위치로 이동
-3. 착륙 명령
+Features:
+1. Switch to Offboard mode
+2. Navigate to specific positions
+3. Execute landing command with smooth descent
 """
 
 import rclpy
@@ -17,7 +27,7 @@ from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand
 
 
 class OffboardControl(Node):
-    """PX4 Offboard 제어 노드"""
+    """PX4 Offboard Control Node"""
 
     def __init__(self):
         super().__init__('offboard_control')
@@ -62,12 +72,12 @@ class OffboardControl(Node):
     def vehicle_local_position_callback(self, vehicle_local_position):
         """Receive position information"""
         self.vehicle_local_position = vehicle_local_position
-        if self.offboard_setpoint_counter % 100 == 0:  # Every 5 seconds
+        if self.offboard_setpoint_counter % 100 == 0:  # Log every 5 seconds
             self.get_logger().info(f'[CALLBACK] Position received: x={vehicle_local_position.x:.2f}, z={vehicle_local_position.z:.2f}')
 
     def vehicle_status_callback(self, vehicle_status):
         """Receive status information"""
-        # Check first callback
+        # Log first callback
         if self.offboard_setpoint_counter == 0:
             self.get_logger().info(f'[CALLBACK] First vehicle_status received! Nav={vehicle_status.nav_state}, Arm={vehicle_status.arming_state}')
         
@@ -210,12 +220,30 @@ class OffboardControl(Node):
                 if self.offboard_setpoint_counter == 700:
                     self.get_logger().info('>> [OFFBOARD] Returning to home...')
             
-            elif self.offboard_setpoint_counter == 900:  # 45s: Land
+            # 45s~65s: Gradual descent (smooth landing) - descend slowly over 20 seconds
+            elif self.offboard_setpoint_counter < 1300:
+                # Descend from 5m to 0.15m over 20 seconds (0.24m/s - very slow)
+                progress = (self.offboard_setpoint_counter - 900) / 400.0  # 0.0 ~ 1.0
+                # Two-stage descent: first 10s fast (5m->1m), last 10s slow (1m->0.15m)
+                if progress < 0.5:
+                    # First 10 seconds: 5m -> 1m (0.4m/s)
+                    current_altitude = -5.0 + (progress * 2.0) * 4.0  # -5.0 -> -1.0
+                else:
+                    # Last 10 seconds: 1m -> 0.15m (0.085m/s)
+                    current_altitude = -1.0 + ((progress - 0.5) * 2.0) * 0.85  # -1.0 -> -0.15
+                
+                self.publish_position_setpoint(0.0, 0.0, current_altitude)
+                if self.offboard_setpoint_counter == 900:
+                    self.get_logger().info('>> [OFFBOARD] Starting smooth descent (20 seconds)...')
+                if self.offboard_setpoint_counter % 40 == 0:
+                    self.get_logger().info(f'>> [DESCENT] Target altitude: {-current_altitude:.2f}m')
+            
+            elif self.offboard_setpoint_counter == 1300:  # 65s: Final land command at 0.15m altitude
                 self.land()
-                self.get_logger().info('>> [OFFBOARD] Landing...')
+                self.get_logger().info('>> [OFFBOARD] Final landing command (altitude ~0.15m)...')
                 self.get_logger().info('=== Mission Complete ===')
             
-            # Print current position (every 2 seconds)
+            # Print current position every 2 seconds
             if self.offboard_setpoint_counter % 40 == 0:
                 self.get_logger().info(
                     f'[OFFBOARD] Position: x={self.vehicle_local_position.x:.2f}, '
