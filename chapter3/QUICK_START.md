@@ -16,12 +16,12 @@ make px4_sitl gazebo-classic_모델명__world명
 
 ### Warehouse (창고) - 추천! 🏆
 ```bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 make px4_sitl gazebo-classic_iris_depth_camera__warehouse
 ```
 또는
 ```bash
-cd ~/source4/drone_simulator/chapter3
+cd ~/drone_simulator/chapter3
 ./run_depth_warehouse.sh
 ```
 
@@ -46,27 +46,27 @@ make px4_sitl gazebo-classic_iris_depth_camera__yosemite
 
 ### Terminal 1: Gazebo Simulation
 ```bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 make px4_sitl gazebo-classic_iris_depth_camera__warehouse
 ```
 
 ### Terminal 2: Micro XRCE-DDS Agent
 ```bash
-cd ~/source4/drone_simulator
+cd ~/drone_simulator/chapter2
 ./run_agent.sh udp4 -p 8888
 ```
 
 ### Terminal 3: Depth Camera Viewer
 ```bash
-cd ~/source4/drone_simulator/chapter3
-source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+cd ~/drone_simulator/chapter3
+source /opt/ros/humble/setup.bash
+source ~/drone_simulator/ros2_ws/install/setup.bash
 python3 depth_camera_viewer.py
 ```
 
 ### Terminal 4: RViz2
 ```bash
-source /opt/ros/galactic/setup.bash
+source /opt/ros/humble/setup.bash
 ros2 run rviz2 rviz2
 ```
 

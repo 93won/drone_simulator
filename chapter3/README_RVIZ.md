@@ -25,14 +25,14 @@ cd ~/drone_simulator
 ### Terminal 3: Depth Camera Viewer (QoS Converter)
 ```bash
 cd ~/drone_simulator/chapter3
-source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/drone_simulator/ros2_ws/install/setup.bash
 python3 depth_camera_viewer.py
 ```
 
 ### Terminal 4: RViz2
 ```bash
-source /opt/ros/galactic/setup.bash
+source /opt/ros/humble/setup.bash
 ros2 run rviz2 rviz2
 ```
 

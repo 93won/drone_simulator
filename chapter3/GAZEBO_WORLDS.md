@@ -32,7 +32,7 @@
 PX4에서 특정 world를 지정하는 **올바른 방법**:
 
 ```bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 
 # 문법: make px4_sitl gazebo-classic_모델명__world명
 # 중요: 언더스코어 2개 (__) 사용!
@@ -50,7 +50,7 @@ make px4_sitl gazebo-classic_iris_depth_camera__baylands
 ### 대체 방법: 환경변수 사용
 
 ```bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 
 # PX4_SITL_WORLD 환경변수 설정
 export PX4_SITL_WORLD=warehouse
@@ -66,14 +66,14 @@ make px4_sitl gazebo-classic_iris_depth_camera
 ### warehouse_sim.sh
 ```bash
 #!/bin/bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 make px4_sitl gazebo-classic_iris_depth_camera__warehouse
 ```
 
 ### yosemite_sim.sh
 ```bash
 #!/bin/bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 make px4_sitl gazebo-classic_iris_depth_camera__yosemite
 ```
 
@@ -87,7 +87,7 @@ chmod +x warehouse_sim.sh yosemite_sim.sh
 `chapter3` 폴더에 이미 warehouse 스크립트가 있습니다:
 
 ```bash
-cd ~/source4/drone_simulator/chapter3
+cd ~/drone_simulator/chapter3
 ./run_depth_warehouse.sh
 ```
 
@@ -154,11 +154,11 @@ ls -lh PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/
 자신만의 월드를 만들고 싶다면:
 ```bash
 # 기존 월드 복사
-cp ~/source4/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/warehouse.world \
-   ~/source4/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/my_world.world
+cp ~/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/warehouse.world \
+   ~/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/my_world.world
 
 # 편집
-nano ~/source4/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/my_world.world
+nano ~/drone_simulator/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/my_world.world
 
 # 실행
 make px4_sitl gazebo-classic_iris_depth_camera__my_world
@@ -168,7 +168,7 @@ make px4_sitl gazebo-classic_iris_depth_camera__my_world
 
 각 월드를 빠르게 테스트하려면:
 ```bash
-cd ~/source4/drone_simulator/PX4-Autopilot
+cd ~/drone_simulator/PX4-Autopilot
 
 # 1. Warehouse
 make px4_sitl gazebo-classic_iris_depth_camera__warehouse

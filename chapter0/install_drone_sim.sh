@@ -53,6 +53,27 @@ sudo apt-get install -y \
 echo -e "${GREEN}✓ Gazebo installation completed${NC}"
 
 ################################################################################
+# Step 2.5: Install ROS2 Gazebo Plugins
+################################################################################
+echo -e "\n${YELLOW}[2.5/6] Installing ROS2 Gazebo plugins...${NC}"
+echo "Installing ROS2-Gazebo bridge for sensor data integration (depth camera, etc.)."
+
+# Detect ROS2 distribution
+if [ -d "/opt/ros/humble" ]; then
+    ROS_DISTRO="humble"
+elif [ -d "/opt/ros/galactic" ]; then
+    ROS_DISTRO="galactic"
+else
+    echo -e "${RED}Error: No ROS2 installation found. Please install ROS2 first.${NC}"
+    exit 1
+fi
+
+echo -e "Detected ROS2 distribution: ${GREEN}${ROS_DISTRO}${NC}"
+sudo apt-get install -y ros-${ROS_DISTRO}-gazebo-ros-pkgs
+
+echo -e "${GREEN}✓ ROS2 Gazebo plugins installation completed${NC}"
+
+################################################################################
 # Step 3: Install PX4 Dependencies
 ################################################################################
 echo -e "\n${YELLOW}[3/6] Installing PX4 build dependencies...${NC}"
