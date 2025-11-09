@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 """
-Depth Camera Viewer Node
+@file      depth_camera_viewer.py
+@brief     Depth Camera Viewer Node for RViz visualization
+@author    Eugene (93won)
+@date      2025-11-09
+@copyright Copyright (c) 2025 Eugene. All rights reserved.
+
+@par License
+This project is released under the MIT License.
+
+@par Description
 Subscribes to depth camera topics with correct QoS settings and republishes
 for RViz visualization.
 """

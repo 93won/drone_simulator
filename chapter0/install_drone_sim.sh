@@ -1,8 +1,18 @@
 #!/bin/bash
 
 ################################################################################
-# PX4 + Gazebo Drone Simulation Environment Installation Script
-# For Ubuntu 22.04 + ROS2 Humble
+# @file      install_drone_sim.sh
+# @brief     PX4 + Gazebo Drone Simulation Environment Installation Script
+# @author    Eugene (93won)
+# @date      2025-11-09
+# @copyright Copyright (c) 2025 Eugene. All rights reserved.
+#
+# @par License
+# This project is released under the MIT License.
+#
+# @par Description
+# Installation script for Ubuntu 22.04 + ROS2 Humble
+# Installs Gazebo, PX4-Autopilot, and all dependencies
 ################################################################################
 
 set -e  # Stop script on error

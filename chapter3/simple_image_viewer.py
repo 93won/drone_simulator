@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """
-Simple Image Viewer - RViz 없이 OpenCV로 이미지 직접 보기
+@file      simple_image_viewer.py
+@brief     Simple Image Viewer using OpenCV (without RViz)
+@author    Eugene (93won)
+@date      2025-11-09
+@copyright Copyright (c) 2025 Eugene. All rights reserved.
+
+@par License
+This project is released under the MIT License.
+
+@par Description
+Displays camera images directly using OpenCV without RViz
 """
 
 import rclpy

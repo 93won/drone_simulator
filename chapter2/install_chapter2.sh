@@ -1,6 +1,16 @@
 #!/bin/bash
 
 ################################################################################
+# @file      install_chapter2.sh
+# @brief     ROS2-PX4 Integration Setup with Micro XRCE-DDS Agent
+# @author    Eugene (93won)
+# @date      2025-11-09
+# @copyright Copyright (c) 2025 Eugene. All rights reserved.
+#
+# @par License
+# This project is released under the MIT License.
+#
+# @par Description
 # Chapter 2: ROS2-PX4 Integration Setup Script
 # Micro XRCE-DDS Agent Installation with DDS Middleware Support
 # For Ubuntu 22.04 + ROS2 Humble (also supports Ubuntu 20.04 + ROS2 Galactic)

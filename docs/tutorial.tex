@@ -79,15 +79,15 @@ This tutorial follows my learning progression: starting with basic installation 
 \subsection{System Requirements}
 
 \begin{itemize}
-    \item Ubuntu 20.04 LTS
+    \item Ubuntu 22.04 LTS (or Ubuntu 20.04 LTS)
     \item At least 8GB RAM (16GB recommended)
     \item 20GB free disk space
     \item Intel Core i5 or better
     \item Graphics card supporting OpenGL 3.3 or higher
-    \item CMake 3.20 or higher (required for Micro XRCE-DDS Agent)
+    \item CMake 3.22 or higher (required for Micro XRCE-DDS Agent)
 \end{itemize}
 
-\textbf{Note:} If your system has CMake 3.16 (Ubuntu 20.04 default), you'll need to upgrade it. Installation instructions are provided in Chapter 2.
+\textbf{Note:} Ubuntu 22.04 comes with CMake 3.22.1 by default. If you're using Ubuntu 20.04 with CMake 3.16, you'll need to upgrade it. Installation instructions are provided in Chapter 2.
 
 \section{System Overview}
 
@@ -118,8 +118,8 @@ As I learned about drone development, I discovered that the environment consists
 
 \textbf{Application Layer:}
 \begin{itemize}
-    \item \textbf{ROS2 Galactic}: A framework for robot software development. This is what I use to write control programs. ROS2 provides tools for creating modular control nodes and managing communication between different parts of the system. \\
-    \textit{Reference:} \url{https://docs.ros.org/en/galactic/}
+    \item \textbf{ROS2 Humble}: A framework for robot software development. This is what I use to write control programs. ROS2 provides tools for creating modular control nodes and managing communication between different parts of the system. ROS2 Humble is the LTS (Long Term Support) release for Ubuntu 22.04. \\
+    \textit{Reference:} \url{https://docs.ros.org/en/humble/}
     
     \item \textbf{Custom Control Nodes}: These are the Python or C++ programs I'm learning to write to implement autonomous behaviors.
 \end{itemize}
@@ -278,15 +278,17 @@ signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
 http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
 | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-# Install ROS2 Galactic
+# Install ROS2 Humble (for Ubuntu 22.04)
 sudo apt update
-sudo apt install -y ros-galactic-desktop
+sudo apt install -y ros-humble-desktop
+
+# Note: For Ubuntu 20.04, use ros-galactic-desktop instead
 \end{lstlisting}
 
 \textbf{Step 2: Configure Environment}
 \begin{lstlisting}[language=bash]
-# Source ROS2 setup
-echo "source /opt/ros/galactic/setup.bash" >> ~/.bashrc
+# Source ROS2 setup (Humble for Ubuntu 22.04)
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 
 # Install additional ROS2 tools
@@ -300,7 +302,7 @@ sudo apt install -y \
 \begin{lstlisting}[language=bash]
 # Check ROS2 installation
 ros2 --version
-# Should output: ros2 cli version galactic
+# Should output: ros2 cli version humble (or galactic for Ubuntu 20.04)
 
 # Test ROS2 (this was exciting when it worked!)
 ros2 run demo_nodes_cpp talker
@@ -583,15 +585,26 @@ The reverse works too: when you want to send commands to PX4 from ROS2, the Agen
 
 \subsection{Prerequisites: CMake 3.20 or Higher}
 
-Before installing the Micro XRCE-DDS Agent, you need to ensure CMake 3.20 or higher is installed. Ubuntu 20.04 comes with CMake 3.16 by default, which is not sufficient.
+Before installing the Micro XRCE-DDS Agent, you need to ensure CMake 3.20 or higher is installed.
 
-\textbf{Check your CMake version:}
+\textbf{Ubuntu 22.04 Users:}
+
+Ubuntu 22.04 comes with CMake 3.22.1 by default, which is sufficient. You can verify this:
+
+\begin{lstlisting}[language=bash]
+cmake --version
+# Should output: cmake version 3.22.1 or higher
+\end{lstlisting}
+
+If you have CMake 3.22 or higher, you can skip the upgrade steps below.
+
+\textbf{Ubuntu 20.04 Users - Check your CMake version:}
 \begin{lstlisting}[language=bash]
 cmake --version
 # If version is less than 3.20, follow the upgrade steps below
 \end{lstlisting}
 
-\textbf{Upgrade CMake to 3.20.6:}
+\textbf{Upgrade CMake to 3.20.6 (Ubuntu 20.04 only):}
 
 \begin{lstlisting}[language=bash]
 # Download CMake 3.20.6 binary
@@ -625,21 +638,21 @@ The Micro XRCE-DDS Agent will be installed locally within the project directory.
 
 \textbf{Automated Installation:}
 
-An installation script is provided to automate the entire process:
+An installation script is provided to automate the entire process. The script automatically detects your ROS2 distribution (Humble or Galactic) and configures accordingly:
 
 \begin{lstlisting}[language=bash]
-cd chapter2
+cd ~/drone_simulator/chapter2
 chmod +x install_chapter2.sh
 ./install_chapter2.sh
 \end{lstlisting}
 
-The script installs the Micro XRCE-DDS Agent in \texttt{chapter2/agent\_install/}, sets up the ROS2 workspace with PX4 message definitions, and creates helper scripts for convenient usage.
+The script installs the Micro XRCE-DDS Agent in \texttt{\textasciitilde/drone\_simulator/agent\_install/}, sets up the ROS2 workspace with PX4 message definitions in \texttt{\textasciitilde/drone\_simulator/ros2\_ws/}, and creates helper scripts for convenient usage.
 
 \textbf{Verification:}
 
 Verify the installation:
 \begin{lstlisting}[language=bash]
-cd chapter2
+cd ~/drone_simulator/chapter2
 ./run_agent.sh --help
 # Should display MicroXRCEAgent help message
 \end{lstlisting}
@@ -714,7 +727,7 @@ Wait for the simulation to fully initialize. The message "EKF2 IMU aligned" indi
 
 \begin{lstlisting}[language=bash]
 # Navigate to chapter2 folder
-cd chapter2
+cd ~/drone_simulator/chapter2
 
 # Start Agent using the helper script
 ./run_agent.sh udp4 -p 8888
@@ -1250,11 +1263,133 @@ if self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD:
     elif self.offboard_setpoint_counter < 900:
         self.publish_position_setpoint(0.0, 0.0, -5.0)
     
-    # 45s: Land
-    elif self.offboard_setpoint_counter == 900:
+    # 45-65s: Smooth landing (gradual descent)
+    elif self.offboard_setpoint_counter < 1300:
+        self.smooth_landing()
+    
+    # 65s: Final land command
+    elif self.offboard_setpoint_counter == 1300:
         self.land()
         self.get_logger().info('=== Mission Complete ===')
 \end{lstlisting}
+
+\subsubsection{Implementing Smooth Landing}
+
+One challenge I encountered was that using the immediate \texttt{land()} command at high altitude caused the drone to descend too quickly and sometimes "bounce" upon touchdown. To solve this, I implemented a two-stage gradual descent algorithm.
+
+\textbf{The Problem:}
+
+When executing \texttt{land()} command from 5 meters altitude, PX4's default landing behavior descends at approximately 1 m/s. While this is generally safe, for more delicate operations or to avoid sudden movements, a smoother landing approach is desirable.
+
+\textbf{The Solution: Two-Stage Descent}
+
+I implemented a 20-second gradual descent with two stages:
+
+\begin{itemize}
+    \item \textbf{Stage 1 (45-55s)}: Descent from 5m to 1m at 0.4 m/s
+    \item \textbf{Stage 2 (55-65s)}: Slow descent from 1m to 0.15m at 0.085 m/s
+    \item \textbf{Final (65s)}: Execute land command at safe 0.15m altitude
+\end{itemize}
+
+\textbf{Implementation:}
+
+\begin{lstlisting}[language=Python]
+def smooth_landing(self):
+    """
+    Two-stage smooth landing algorithm
+    
+    Stage 1 (45-55s, counter 900-1100): 5m -> 1m at 0.4 m/s
+    Stage 2 (55-65s, counter 1100-1300): 1m -> 0.15m at 0.085 m/s
+    Final land command at 65s when altitude is ~0.15m
+    """
+    # Stage 1: Fast descent from 5m to 1m
+    if self.offboard_setpoint_counter < 1100:
+        # 10 seconds (200 loops) to descend 4 meters
+        elapsed = self.offboard_setpoint_counter - 900  # 0-200
+        progress = elapsed / 200.0  # 0.0 to 1.0
+        
+        # Linear interpolation: 5m -> 1m
+        target_altitude = 5.0 - (4.0 * progress)  # 5.0 to 1.0
+        z_ned = -target_altitude  # Convert to NED
+        
+        self.publish_position_setpoint(0.0, 0.0, z_ned)
+        
+        if elapsed % 40 == 0:  # Log every 2 seconds
+            self.get_logger().info(
+                f'[Stage 1] Descending: {target_altitude:.2f}m'
+            )
+    
+    # Stage 2: Very slow descent from 1m to 0.15m
+    else:
+        # 10 seconds (200 loops) to descend 0.85 meters
+        elapsed = self.offboard_setpoint_counter - 1100  # 0-200
+        progress = elapsed / 200.0  # 0.0 to 1.0
+        
+        # Linear interpolation: 1m -> 0.15m
+        target_altitude = 1.0 - (0.85 * progress)  # 1.0 to 0.15
+        z_ned = -target_altitude  # Convert to NED
+        
+        self.publish_position_setpoint(0.0, 0.0, z_ned)
+        
+        if elapsed % 40 == 0:  # Log every 2 seconds
+            self.get_logger().info(
+                f'[Stage 2] Final descent: {target_altitude:.2f}m'
+            )
+\end{lstlisting}
+
+\textbf{Why Two Stages?}
+
+\begin{itemize}
+    \item \textbf{Safety}: Slowing down near the ground prevents hard impacts
+    \item \textbf{Stability}: The drone has time to correct any position errors
+    \item \textbf{Precision}: Final touchdown occurs at a predictable altitude (0.15m)
+    \item \textbf{No Bounce}: Gentle vertical velocity eliminates touchdown bounce
+\end{itemize}
+
+\textbf{Mathematical Breakdown:}
+
+Stage 1:
+\begin{itemize}
+    \item Duration: 10 seconds (200 control loops @ 20Hz)
+    \item Distance: 5.0m - 1.0m = 4.0m
+    \item Average velocity: 4.0m / 10s = 0.4 m/s
+\end{itemize}
+
+Stage 2:
+\begin{itemize}
+    \item Duration: 10 seconds (200 control loops @ 20Hz)
+    \item Distance: 1.0m - 0.15m = 0.85m
+    \item Average velocity: 0.85m / 10s = 0.085 m/s (very slow)
+\end{itemize}
+
+\textbf{Results:}
+
+With this smooth landing implementation, I observed:
+\begin{itemize}
+    \item No bouncing on touchdown
+    \item Stable descent throughout both stages
+    \item Position accuracy maintained (< 10cm drift)
+    \item Smooth transition to PX4's landing mode at 0.15m
+\end{itemize}
+
+The complete mission now includes this smooth landing sequence, making the autonomous flight more realistic and safer.
+
+\subsubsection{Complete Mission Timeline with Smooth Landing}
+
+Here's the updated mission profile including smooth landing:
+
+\textbf{Mission Profile:}
+\begin{enumerate}
+    \item Prepare and arm (0-2.25s)
+    \item Takeoff to 5 meters altitude (2.25-7.5s)
+    \item Hold position for 7.5 seconds (7.5-15s)
+    \item Move forward 5 meters (15-25s)
+    \item Move left 5 meters (25-35s)
+    \item Return to home position (35-45s)
+    \item \textbf{Stage 1 smooth descent to 1m (45-55s)}
+    \item \textbf{Stage 2 smooth descent to 0.15m (55-65s)}
+    \item Final land command (65s)
+\end{enumerate}
 
 \subsubsection{Running the Autonomous Mission}
 
@@ -1274,16 +1409,16 @@ cd ~/drone_simulator
 
 \textbf{Terminal 3: Monitor Topics (Optional)}
 \begin{lstlisting}[language=bash]
-source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/drone_simulator/ros2_ws/install/setup.bash
 ros2 topic echo /fmu/out/vehicle_status_v1
 \end{lstlisting}
 
 \textbf{Terminal 4: Run Offboard Control}
 \begin{lstlisting}[language=bash]
 cd ~/drone_simulator/chapter2
-source /opt/ros/galactic/setup.bash
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/drone_simulator/ros2_ws/install/setup.bash
 python3 offboard_control.py
 \end{lstlisting}
 
@@ -1354,6 +1489,9 @@ By completing this chapter, I now understand:
     \item Topic naming conventions (\texttt{\_v1} suffix!)
     \item How to create autonomous waypoint missions
     \item Debugging techniques for ROS2-PX4 integration
+    \item \textbf{Implementing smooth landing with multi-stage descent}
+    \item \textbf{Managing descent velocity for safe touchdown}
+    \item \textbf{Preventing bounce through gradual altitude reduction}
 \end{itemize}
 
 \textbf{Mission Timeline Summary:}
@@ -1372,10 +1510,12 @@ By completing this chapter, I now understand:
 15-25 & 300-500 & Move forward & (5, 0, -5) \\
 25-35 & 500-700 & Move left & (5, 5, -5) \\
 35-45 & 700-900 & Return home & (0, 0, -5) \\
-45 & 900 & LAND command & - \\
+45-55 & 900-1100 & Stage 1 descent (5m→1m) & (0, 0, -5 to -1) \\
+55-65 & 1100-1300 & Stage 2 descent (1m→0.15m) & (0, 0, -1 to -0.15) \\
+65 & 1300 & LAND command & - \\
 \hline
 \end{tabular}
-\caption{Autonomous Mission Timeline (20Hz control loop)}
+\caption{Autonomous Mission Timeline with Smooth Landing (20Hz control loop)}
 \end{table}
 
 This chapter was the most challenging so far, but also the most rewarding. Seeing the drone follow my programmed waypoints autonomously felt like a huge achievement. I now have a solid foundation for more complex autonomous behaviors!
